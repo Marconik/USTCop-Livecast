@@ -1,2 +1,2 @@
 # USTCop-Livecast
-Livecast project for USTC Maimai Contest
+USTC舞萌比赛直播程序，基于OBS和Node.js

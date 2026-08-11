@@ -1,0 +1,5 @@
+{
+  "name": "Retro LCD Clock",
+  "description": "A real-time 24-hour digital clock with a retro LCD aesthetic.",
+  "requestFramePermissions": []
+}

@@ -38,7 +38,7 @@ USTC舞萌比赛直播程序，基于OBS、Python和Node.js
 
 ### 场地设置
 
-<img src="README.assets\image-20260814214800001.png" alt="image-20260814214800001" style="zoom: 33%;" />
+<img src="README.assets\image-20260814214800001.jpg" alt="image-20260814214800001" style="zoom: 33%;" />
 
 场地大致如图所示
 

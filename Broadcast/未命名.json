@@ -1311,7 +1311,7 @@
             "name": "插入视频",
             "id": "obs_stinger_transition",
             "settings": {
-                "path": "E:/USTCop/Video Project.mp4",
+                "path": "Video Project.mp4",
                 "audio_monitoring": 2,
                 "track_matte_enabled": false,
                 "audio_fade_style": 1
@@ -2644,7 +2644,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/半决赛.png"
+                "file": "半决赛.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -2670,7 +2670,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/赛制.png"
+                "file": "赛制.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -2696,7 +2696,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/1_190714095046_2.JPG"
+                "file": "1_190714095046_2.JPG"
             },
             "mixers": 0,
             "sync": 0,
@@ -2722,7 +2722,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/等待.png"
+                "file": "等待.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -2748,7 +2748,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/BG3.png"
+                "file": "BG3.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -2774,7 +2774,7 @@
             "id": "ffmpeg_source",
             "versioned_id": "ffmpeg_source",
             "settings": {
-                "local_file": "E:/USTCop/IMG_3370.GIF",
+                "local_file": "IMG_3370.GIF",
                 "looping": true
             },
             "mixers": 255,
@@ -2810,7 +2810,7 @@
             "id": "ffmpeg_source",
             "versioned_id": "ffmpeg_source",
             "settings": {
-                "local_file": "E:/USTCop/4427CE0F43EC4168A58F89297D869F85.gif",
+                "local_file": "4427CE0F43EC4168A58F89297D869F85.gif",
                 "looping": true
             },
             "mixers": 255,
@@ -2846,7 +2846,7 @@
             "id": "ffmpeg_source",
             "versioned_id": "ffmpeg_source",
             "settings": {
-                "local_file": "E:/USTCop/720B88B849E5AA3063D2FCE5931ADF2A.gif",
+                "local_file": "720B88B849E5AA3063D2FCE5931ADF2A.gif",
                 "looping": true
             },
             "mixers": 255,
@@ -3423,7 +3423,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/总决赛.png"
+                "file": "总决赛.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -4469,7 +4469,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/淘汰赛.png"
+                "file": "淘汰赛.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -4977,7 +4977,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/BG.png"
+                "file": "BG.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -5404,7 +5404,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/A.png"
+                "file": "A.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -5430,7 +5430,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/B.png"
+                "file": "B.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -5456,7 +5456,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/C.png"
+                "file": "C.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -5482,7 +5482,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/D.png"
+                "file": "D.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -5584,7 +5584,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/score1.png"
+                "file": "score1.png"
             },
             "mixers": 0,
             "sync": 0,
@@ -5610,7 +5610,7 @@
             "id": "image_source",
             "versioned_id": "image_source",
             "settings": {
-                "file": "E:/USTCop/score2.png"
+                "file": "score2.png"
             },
             "mixers": 0,
             "sync": 0,

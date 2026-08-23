@@ -1,11 +1,236 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-mono: "Share Tech Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
 }
 
 body {
-  background-color: #1a1a1a;
-  color: #e5e5e5;
+  margin: 0;
+  background: #f6f7fb;
+  color: #20242c;
+  font-family: var(--font-sans);
+}
+
+button {
+  border-radius: 8px;
+}
+
+button:focus-visible {
+  outline: 3px solid rgba(42, 111, 187, 0.35);
+  outline-offset: 2px;
+}
+
+.group-button {
+  align-items: center;
+  aspect-ratio: 1;
+  background: #fbfcff;
+  border: 1px solid #d7dce8;
+  color: #344052;
+  display: flex;
+  font-size: clamp(1.2rem, 3vw, 1.7rem);
+  font-weight: 700;
+  justify-content: center;
+  min-width: 0;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.group-button:hover {
+  background: #eef5fd;
+  border-color: #8fbbe6;
+  color: #245f9f;
+}
+
+.group-button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.group-button-selected {
+  background: #2a6fbb;
+  border-color: #2a6fbb;
+  color: #ffffff;
+}
+
+.group-button-selected:hover {
+  background: #235f9f;
+  border-color: #235f9f;
+  color: #ffffff;
+}
+
+.action-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd3df;
+  color: #283241;
+  display: flex;
+  font-size: 0.95rem;
+  font-weight: 700;
+  gap: 0.5rem;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.action-button:hover:not(:disabled) {
+  background: #f0f6fc;
+  border-color: #8fbbe6;
+  color: #245f9f;
+}
+
+.action-button:disabled {
+  background: #eef1f5;
+  border-color: #d7dce8;
+  color: #8b97a6;
+  cursor: not-allowed;
+}
+
+.action-button-primary {
+  background: #1f7a5a;
+  border-color: #1f7a5a;
+  color: #ffffff;
+}
+
+.action-button-primary:hover:not(:disabled) {
+  background: #186448;
+  border-color: #186448;
+  color: #ffffff;
+}
+
+.icon-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #cbd3df;
+  color: #344052;
+  display: flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 2.5rem;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.icon-button:hover {
+  background: #eef5fd;
+  border-color: #8fbbe6;
+  color: #245f9f;
+}
+
+.icon-wide-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px dashed #8fbbe6;
+  color: #245f9f;
+  display: flex;
+  height: 2.5rem;
+  justify-content: center;
+  width: 100%;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+
+.icon-wide-button:hover {
+  background: #eef5fd;
+  border-color: #2a6fbb;
+}
+
+.round-state {
+  background: #eef1f5;
+  border: 1px solid #d7dce8;
+  color: #657284;
+  flex: 0 0 auto;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0.45rem 0.6rem;
+}
+
+.round-state-playing {
+  background: #fff7e7;
+  border-color: #f0c66d;
+  color: #805300;
+}
+
+.round-state-finished {
+  background: #e8f6ef;
+  border-color: #91d3b5;
+  color: #176448;
+}
+
+.player-row {
+  align-items: center;
+  background: #fbfcff;
+  border: 1px solid #e1e5ee;
+  display: flex;
+  gap: 0.65rem;
+  min-height: 3rem;
+  min-width: 0;
+  padding: 0.55rem 0.7rem;
+}
+
+.player-number {
+  align-items: center;
+  background: #e7f0fa;
+  color: #245f9f;
+  display: flex;
+  flex: 0 0 2rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  height: 2rem;
+  justify-content: center;
+}
+
+.score-line {
+  align-items: center;
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: minmax(0, 1fr) minmax(7rem, 9rem);
+}
+
+.score-input {
+  background: #ffffff;
+  border: 1px solid #cbd3df;
+  color: #161a20;
+  font: inherit;
+  font-weight: 700;
+  height: 2.5rem;
+  min-width: 0;
+  padding: 0 0.75rem;
+  width: 100%;
+}
+
+.score-input:focus {
+  border-color: #2a6fbb;
+  outline: 3px solid rgba(42, 111, 187, 0.18);
+}
+
+.score-input:disabled {
+  background: #eef1f5;
+  color: #344052;
+}
+
+.total-box {
+  background: #fbfcff;
+  border: 1px solid #e1e5ee;
+  min-width: 0;
+  padding: 0.65rem;
+}
+
+.total-box-winner {
+  background: #e8f6ef;
+  border-color: #91d3b5;
+}
+
+@media (max-width: 420px) {
+  .score-line {
+    grid-template-columns: 1fr;
+  }
 }

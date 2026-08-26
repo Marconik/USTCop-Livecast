@@ -289,7 +289,7 @@ def draw_player_box(
     width, height = box.size
     no_text = f"No.{player.no}" if player.no else "No."
 
-    no_font = fit_font(draw, no_text, font_paths["no"], 88, 48, int(width * 0.68))
+    no_font = fit_font(draw, no_text, font_paths["no"], 110, 68, int(width * 0.82))
     name_font = load_font(font_paths["name"], 66) if player.name else None
 
     draw_centered_text(
@@ -297,9 +297,9 @@ def draw_player_box(
         (x + width // 2, y + int(height * 0.34)),
         no_text,
         no_font,
-        fill=(11, 51, 91),
-        stroke_fill=(226, 244, 248),
-        stroke_width=3,
+        fill=(2, 38, 88),
+        stroke_fill=(255, 255, 255),
+        stroke_width=5,
     )
 
     if player.name:
@@ -362,9 +362,11 @@ def generate_bracket(
 
     font_paths = {
         "no": [
+            Path(r"C:\Windows\Fonts\arialbd.ttf"),
+            Path(r"C:\Windows\Fonts\msyhbd.ttc"),
+            Path(r"C:\Windows\Fonts\simhei.ttf"),
             BASE_DIR / "image-gen" / "Billiton Gothic.ttf",
             BASE_DIR / "image-gen" / "BankGothic Lt BT Light.ttf",
-            Path(r"C:\Windows\Fonts\arialbd.ttf"),
         ],
         "name": [
             BASE_DIR / "image-gen" / "BaseMono-Narrow.ttf",

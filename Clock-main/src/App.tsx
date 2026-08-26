@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 import type {Dispatch, SetStateAction} from 'react';
 import {
   CheckCircle2,
@@ -39,51 +39,13 @@ type ScoreSong = 'songOne' | 'songTwo' | 'songThree';
 type LoadState = 'idle' | 'loading' | 'loaded';
 type Page = 'home' | 'elimination' | 'semifinal' | 'final';
 
-const groups: GroupKey[] = ['A', 'B', 'C', 'D', 'E'];
-
-const participantsByGroup: Record<GroupKey, Participant[]> = {
-  A: [
-    {number: '1', id: 'HaiT520'},
-    {number: '2', id: 'dier4136'},
-    {number: '3', id: 'F.riP'},
-    {number: '4', id: 'Meph4786'},
-    {number: '5', id: 'Re:owp'},
-    {number: '6', id: 'Witch'},
-    {number: '7', id: 'Yachie'},
-    {number: '8', id: 'ItzBedLA'},
-  ],
-  B: [
-    {number: '1', id: 'wx1fan'},
-    {number: '2', id: 'MJM'},
-    {number: '3', id: 'Frisk'},
-    {number: '4', id: 'Veritas'},
-    {number: '5', id: 'HIKARY_X'},
-    {number: '6', id: 'Fore'},
-    {number: '7', id: 'DeFinity'},
-    {number: '8', id: 'Ryougetu'},
-  ],
-  C: [
-    {number: '1', id: 'hanser66'},
-    {number: '2', id: 'MISAKA'},
-    {number: '3', id: 'Cravus'},
-    {number: '4', id: 'KNRUZ'},
-    {number: '5', id: 'TSUGUMI'},
-    {number: '6', id: 'thriceee'},
-    {number: '7', id: 'c0lD1Nk'},
-    {number: '8', id: 'ZZZZZZZZ'},
-  ],
-  D: [
-    {number: '1', id: 'C4＿plant'},
-    {number: '2', id: 'AAAAAAAA'},
-    {number: '3', id: 'yzsb2333'},
-    {number: '4', id: 'LEMONWAT'},
-    {number: '5', id: 'TwlitV'},
-    {number: '6', id: 'c7H5NO3S'},
-    {number: '7', id: 'rainbow'},
-    {number: '8', id: '２ｂａ３'},
-  ],
-  E: [],
+type SchedulePayload = {
+  group: GroupKey;
+  participants: Participant[];
+  rounds: MatchRound[];
 };
+
+const groups: GroupKey[] = ['A', 'B', 'C', 'D', 'E'];
 
 const placeholderActions = {
   schedule: '已选择切换到“赛程”场景，OBS 对接稍后实现。',
@@ -107,23 +69,6 @@ const createInitialScores = (rounds: MatchRound[]) =>
     acc[round.id] = emptyRoundScore();
     return acc;
   }, {});
-
-const createEliminationRounds = (participants: Participant[]): MatchRound[] => {
-  const pairings = [
-    [0, 4],
-    [1, 5],
-    [2, 6],
-    [3, 7],
-  ];
-
-  return pairings
-    .filter(([firstIndex, secondIndex]) => participants[firstIndex] && participants[secondIndex])
-    .map(([firstIndex, secondIndex], index) => ({
-      id: index + 1,
-      label: `回合 ${index + 1}`,
-      players: [participants[firstIndex], participants[secondIndex]],
-    }));
-};
 
 const scoreToNumber = (value: string) => {
   const parsed = Number(value);
@@ -161,7 +106,7 @@ const createSemifinalRounds = (
   return pairings
     .filter(([firstRound, secondRound]) => winnerByRound[firstRound] && winnerByRound[secondRound])
     .map(([firstRound, secondRound], index) => ({
-      id: index + 1,
+      id: index + 5,
       label: `半决赛 ${index + 1}`,
       players: [winnerByRound[firstRound], winnerByRound[secondRound]],
     }));
@@ -181,7 +126,7 @@ const createFinalRounds = (
 
   return [
     {
-      id: 1,
+      id: 7,
       label: '决赛',
       players: [finalists[0], finalists[1]],
     },
@@ -197,11 +142,57 @@ const pageTitle: Record<Page, string> = {
   final: '决赛控制',
 };
 
+async function requestJson<T>(url: string, options?: RequestInit): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(options?.headers ?? {}),
+    },
+  });
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.error ?? '请求失败');
+  }
+
+  return payload as T;
+}
+
+const loadGroupSchedule = (group: GroupKey) =>
+  requestJson<SchedulePayload>(`/api/groups/${group}/schedule`);
+
+const writeWorkbookRound = (
+  group: GroupKey,
+  round: MatchRound,
+  scoreState: RoundScoreState,
+) =>
+  requestJson<{ok: boolean; winnerIndex: number; totals: [number, number]}>(
+    `/api/groups/${group}/round`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        roundId: round.id,
+        players: round.players,
+        songOne: scoreState.songOne,
+        songTwo: scoreState.songTwo,
+        songThree: scoreState.songThree,
+      }),
+    },
+  );
+
+const writeWorkbookAdvancement = (group: GroupKey, rounds: MatchRound[]) =>
+  requestJson<{ok: boolean}>(`/api/groups/${group}/advance`, {
+    method: 'POST',
+    body: JSON.stringify({rounds}),
+  });
+
 export default function App() {
   const [page, setPage] = useState<Page>('home');
   const [selectedGroup, setSelectedGroup] = useState<GroupKey | null>(null);
   const [loadedGroup, setLoadedGroup] = useState<GroupKey | null>(null);
   const [loadState, setLoadState] = useState<LoadState>('idle');
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [rounds, setRounds] = useState<MatchRound[]>([]);
   const [roundScores, setRoundScores] = useState<Record<number, RoundScoreState>>({});
   const [semifinalRounds, setSemifinalRounds] = useState<MatchRound[]>([]);
@@ -210,14 +201,10 @@ export default function App() {
   const [finalScores, setFinalScores] = useState<Record<number, RoundScoreState>>({});
   const [statusText, setStatusText] = useState('请选择组别，然后加载参赛者名单。');
 
-  const participants = useMemo(
-    () => (loadedGroup ? participantsByGroup[loadedGroup] : []),
-    [loadedGroup],
-  );
-
   const canLoad = selectedGroup !== null && loadState !== 'loading';
   const isLoaded = loadState === 'loaded' && loadedGroup !== null;
-  const canStartCompetition = isLoaded && participants.length > 0 && rounds.length === 4;
+  const canStartCompetition =
+    isLoaded && selectedGroup === loadedGroup && participants.length === 8 && rounds.length === 4;
   const canStartSemifinals =
     rounds.length === 4 &&
     rounds.every((round) => roundScores[round.id]?.status === 'finished');
@@ -229,42 +216,36 @@ export default function App() {
 
   const handleSelectGroup = (group: GroupKey) => {
     setSelectedGroup(group);
-    setLoadedGroup(null);
-    setLoadState('idle');
-    setRounds([]);
-    setRoundScores({});
-    setSemifinalRounds([]);
-    setSemifinalScores({});
-    setFinalRounds([]);
-    setFinalScores({});
-    setPage('home');
-    setStatusText(`已选择 ${group} 组，可以加载参赛者名单。`);
+    if (loadState !== 'loading') {
+      setStatusText(`已选择 ${group} 组，可以加载参赛者名单。`);
+    }
   };
 
-  const handleLoadParticipants = () => {
+  const handleLoadParticipants = async () => {
     if (!selectedGroup) return;
 
     setLoadState('loading');
     setStatusText(`正在加载 ${selectedGroup} 组参赛者名单和淘汰赛回合...`);
 
-    window.setTimeout(() => {
-      const nextParticipants = participantsByGroup[selectedGroup];
-      const nextRounds = createEliminationRounds(nextParticipants);
-
-      setLoadedGroup(selectedGroup);
-      setRounds(nextRounds);
-      setRoundScores(createInitialScores(nextRounds));
+    try {
+      const schedule = await loadGroupSchedule(selectedGroup);
+      setLoadedGroup(schedule.group);
+      setParticipants(schedule.participants);
+      setRounds(schedule.rounds);
+      setRoundScores(createInitialScores(schedule.rounds));
       setSemifinalRounds([]);
       setSemifinalScores({});
       setFinalRounds([]);
       setFinalScores({});
+      setPage('home');
       setLoadState('loaded');
       setStatusText(
-        nextParticipants.length > 0
-          ? `${selectedGroup} 组名单加载成功，已生成 ${nextRounds.length} 个淘汰赛回合。`
-          : `${selectedGroup} 组名单加载成功，当前暂无参赛者数据。`,
+        `${schedule.group} 组名单加载成功，已从表格读取 ${schedule.participants.length} 位选手和 ${schedule.rounds.length} 个淘汰赛回合。`,
       );
-    }, 450);
+    } catch (error) {
+      setLoadState(loadedGroup ? 'loaded' : 'idle');
+      setStatusText(error instanceof Error ? error.message : '加载失败');
+    }
   };
 
   const handleStartCompetition = () => {
@@ -274,24 +255,36 @@ export default function App() {
     setStatusText(`${loadedGroup} 组淘汰赛控制页已打开。`);
   };
 
-  const handleStartSemifinals = () => {
-    if (!canStartSemifinals) return;
+  const handleStartSemifinals = async () => {
+    if (!canStartSemifinals || !loadedGroup) return;
 
     const nextRounds = createSemifinalRounds(rounds, roundScores);
-    setSemifinalRounds(nextRounds);
-    setSemifinalScores(createInitialScores(nextRounds));
-    setPage('semifinal');
-    setStatusText(`${loadedGroup} 组半决赛控制页已打开。`);
+    try {
+      setStatusText(`正在写入 ${loadedGroup} 组半决赛选手...`);
+      await writeWorkbookAdvancement(loadedGroup, nextRounds);
+      setSemifinalRounds(nextRounds);
+      setSemifinalScores(createInitialScores(nextRounds));
+      setPage('semifinal');
+      setStatusText(`${loadedGroup} 组半决赛选手已写入表格。`);
+    } catch (error) {
+      setStatusText(error instanceof Error ? error.message : '半决赛写入失败');
+    }
   };
 
-  const handleStartFinals = () => {
-    if (!canStartFinals) return;
+  const handleStartFinals = async () => {
+    if (!canStartFinals || !loadedGroup) return;
 
     const nextRounds = createFinalRounds(semifinalRounds, semifinalScores);
-    setFinalRounds(nextRounds);
-    setFinalScores(createInitialScores(nextRounds));
-    setPage('final');
-    setStatusText(`${loadedGroup} 组决赛控制页已打开。`);
+    try {
+      setStatusText(`正在写入 ${loadedGroup} 组决赛选手...`);
+      await writeWorkbookAdvancement(loadedGroup, nextRounds);
+      setFinalRounds(nextRounds);
+      setFinalScores(createInitialScores(nextRounds));
+      setPage('final');
+      setStatusText(`${loadedGroup} 组决赛选手已写入表格。`);
+    } catch (error) {
+      setStatusText(error instanceof Error ? error.message : '决赛写入失败');
+    }
   };
 
   const handleReturnHomeFromFinal = () => {
@@ -392,20 +385,42 @@ export default function App() {
     setStatusText(`${stageName} ${roundId} 已进入曲目 3。`);
   };
 
-  const finishRound = (
+  const finishRound = async (
     setScores: Dispatch<SetStateAction<Record<number, RoundScoreState>>>,
+    currentScores: Record<number, RoundScoreState>,
+    stageRounds: MatchRound[],
     roundId: number,
     stageName: string,
+    forceSongThree = false,
   ) => {
+    if (!loadedGroup) return;
+
+    const round = stageRounds.find((item) => item.id === roundId);
+    if (!round) {
+      setStatusText(`${stageName} ${roundId} 未找到回合信息。`);
+      return;
+    }
+
+    const nextRoundState = {
+      ...(currentScores[roundId] ?? emptyRoundScore()),
+      status: 'finished' as const,
+      showSongTwo: true,
+      showSongThree: forceSongThree ? true : (currentScores[roundId] ?? emptyRoundScore()).showSongThree,
+    };
+
+    try {
+      setStatusText(`正在写入 ${stageName} ${roundId} 成绩...`);
+      await writeWorkbookRound(loadedGroup, round, nextRoundState);
+    } catch (error) {
+      setStatusText(error instanceof Error ? error.message : `${stageName} ${roundId} 写入失败`);
+      return;
+    }
+
     setScores((currentScores) => ({
       ...currentScores,
-      [roundId]: {
-        ...(currentScores[roundId] ?? emptyRoundScore()),
-        status: 'finished',
-        showSongTwo: true,
-      },
+      [roundId]: nextRoundState,
     }));
-    setStatusText(`${stageName} ${roundId} 已结束，总分已计算。`);
+    setStatusText(`${stageName} ${roundId} 已结束，成绩已写入表格。`);
   };
 
   return (
@@ -448,7 +463,9 @@ export default function App() {
             canStartSemifinals={canStartSemifinals}
             loadedGroup={loadedGroup}
             onBack={() => setPage('home')}
-            onFinishRound={(roundId) => finishRound(setRoundScores, roundId, '淘汰赛回合')}
+            onFinishRound={(roundId) =>
+              finishRound(setRoundScores, roundScores, rounds, roundId, '淘汰赛回合')
+            }
             onShowSongTwo={(roundId) => showSongTwo(setRoundScores, roundId, '淘汰赛回合')}
             onStartRound={(roundId) => startRound(setRoundScores, roundId, '淘汰赛回合')}
             onStartSemifinals={handleStartSemifinals}
@@ -462,7 +479,9 @@ export default function App() {
             canStartFinals={canStartFinals}
             loadedGroup={loadedGroup}
             onBack={() => setPage('elimination')}
-            onFinishRound={(roundId) => finishRound(setSemifinalScores, roundId, '半决赛')}
+            onFinishRound={(roundId) =>
+              finishRound(setSemifinalScores, semifinalScores, semifinalRounds, roundId, '半决赛')
+            }
             onShowSongTwo={(roundId) => showSongTwo(setSemifinalScores, roundId, '半决赛')}
             onStartRound={(roundId) => startRound(setSemifinalScores, roundId, '半决赛')}
             onStartFinals={handleStartFinals}
@@ -476,7 +495,9 @@ export default function App() {
             canReturnHome={canReturnHomeFromFinal}
             loadedGroup={loadedGroup}
             onBack={() => setPage('semifinal')}
-            onFinishRound={(roundId) => finishRound(setFinalScores, roundId, '决赛')}
+            onFinishRound={(roundId) =>
+              finishRound(setFinalScores, finalScores, finalRounds, roundId, '决赛', true)
+            }
             onReturnHome={handleReturnHomeFromFinal}
             onShowSongThree={(roundId) => showSongThree(setFinalScores, roundId, '决赛')}
             onShowSongTwo={(roundId) => showSongTwo(setFinalScores, roundId, '决赛')}

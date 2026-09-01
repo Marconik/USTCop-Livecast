@@ -240,6 +240,76 @@ button:focus-visible {
   color: #344052;
 }
 
+.control-select {
+  background: #ffffff;
+  border: 1px solid #cbd3df;
+  color: #161a20;
+  font: inherit;
+  font-weight: 700;
+  min-height: 2.75rem;
+  min-width: 0;
+  padding: 0 0.75rem;
+  width: 100%;
+}
+
+.control-select:focus {
+  border-color: #2a6fbb;
+  outline: 3px solid rgba(42, 111, 187, 0.18);
+}
+
+.control-select:disabled {
+  background: #eef1f5;
+  color: #8b97a6;
+  cursor: not-allowed;
+}
+
+.scene-item-button {
+  align-items: center;
+  background: #fbfcff;
+  border: 1px solid #e1e5ee;
+  color: #657284;
+  display: flex;
+  gap: 0.55rem;
+  min-height: 2.5rem;
+  min-width: 0;
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.scene-item-button:hover:not(:disabled) {
+  background: #eef5fd;
+  border-color: #8fbbe6;
+  color: #245f9f;
+}
+
+.scene-item-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.scene-item-button-enabled {
+  background: #e8f6ef;
+  border-color: #91d3b5;
+  color: #176448;
+}
+
+.obs-details {
+  border-top: 1px solid #e1e5ee;
+  padding-top: 0.75rem;
+}
+
+.obs-details summary {
+  color: #344052;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.obs-details summary::marker {
+  color: #2a6fbb;
+}
+
 .total-box {
   background: #fbfcff;
   border: 1px solid #e1e5ee;

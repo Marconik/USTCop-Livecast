@@ -1,5 +1,6 @@
 import {useState} from 'react';
 import type {Dispatch, SetStateAction} from 'react';
+import ClockOverlay from './components/ClockOverlay';
 import {
   CheckCircle2,
   ChevronLeft,
@@ -167,13 +168,19 @@ const writeWorkbookRound = (
   round: MatchRound,
   scoreState: RoundScoreState,
 ) =>
-  requestJson<{ok: boolean; winnerIndex: number; totals: [number, number]}>(
+  requestJson<{
+    ok: boolean;
+    winnerIndex: number;
+    totals: [number, number];
+    scoreImages?: {paths: [string, string]; songCount: 2 | 3};
+  }>(
     `/api/groups/${group}/round`,
     {
       method: 'POST',
       body: JSON.stringify({
         roundId: round.id,
         players: round.players,
+        songCount: scoreState.showSongThree ? 3 : 2,
         songOne: scoreState.songOne,
         songTwo: scoreState.songTwo,
         songThree: scoreState.songThree,
@@ -188,6 +195,10 @@ const writeWorkbookAdvancement = (group: GroupKey, rounds: MatchRound[]) =>
   });
 
 export default function App() {
+  return window.location.pathname === '/clock' ? <ClockOverlay /> : <CompetitionApp />;
+}
+
+function CompetitionApp() {
   const [page, setPage] = useState<Page>('home');
   const [selectedGroup, setSelectedGroup] = useState<GroupKey | null>(null);
   const [loadedGroup, setLoadedGroup] = useState<GroupKey | null>(null);
@@ -409,7 +420,7 @@ export default function App() {
     };
 
     try {
-      setStatusText(`正在写入 ${stageName} ${roundId} 成绩...`);
+      setStatusText(`正在写入 ${stageName} ${roundId} 成绩并生成成绩图...`);
       await writeWorkbookRound(loadedGroup, round, nextRoundState);
     } catch (error) {
       setStatusText(error instanceof Error ? error.message : `${stageName} ${roundId} 写入失败`);
@@ -420,7 +431,7 @@ export default function App() {
       ...currentScores,
       [roundId]: nextRoundState,
     }));
-    setStatusText(`${stageName} ${roundId} 已结束，成绩已写入表格。`);
+    setStatusText(`${stageName} ${roundId} 已结束，成绩已写入表格和直播成绩图。`);
   };
 
   return (
@@ -1185,10 +1196,11 @@ function ScoreInputRow({
             <input
               className="score-input"
               disabled={disabled}
-              inputMode="numeric"
+              inputMode="decimal"
               min="0"
               onChange={(event) => onUpdateScore(index as 0 | 1, event.target.value)}
               placeholder="成绩"
+              step="0.0001"
               type="number"
               value={scores[index]}
             />

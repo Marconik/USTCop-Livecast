@@ -21,6 +21,29 @@ body {
   font-family: var(--font-sans);
 }
 
+body.obs-clock-page {
+  background: #000000;
+}
+
+.clock-overlay {
+  align-items: center;
+  background: #000000;
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+  overflow: hidden;
+  transform-origin: center;
+  width: 100vw;
+}
+
+.clock-display {
+  align-items: center;
+  display: flex;
+  filter: drop-shadow(0 0 14px rgba(57, 255, 20, 0.42));
+  justify-content: center;
+  transform: translateZ(0);
+}
+
 button {
   border-radius: 8px;
 }

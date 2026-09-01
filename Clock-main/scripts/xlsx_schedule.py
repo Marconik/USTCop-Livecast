@@ -29,6 +29,8 @@ ET.register_namespace("xr3", NS_XR3)
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BRACKET_OUTPUT = REPO_ROOT / "Broadcast" / "赛程.png"
+SCORE_IMAGE_DIR = REPO_ROOT / "image-gen"
+SCORE_IMAGE_OUTPUT_DIR = REPO_ROOT / "Broadcast"
 
 
 def workbook_path(group: str) -> Path:
@@ -329,6 +331,15 @@ def update_schedule_image(group: str) -> None:
             temp_path.unlink()
 
 
+def update_score_images(payload: dict[str, Any]) -> dict[str, Any]:
+    score_image_dir = str(SCORE_IMAGE_DIR)
+    if score_image_dir not in sys.path:
+        sys.path.insert(0, score_image_dir)
+    import score_image
+
+    return score_image.generate_score_images(payload, SCORE_IMAGE_OUTPUT_DIR)
+
+
 def rows_for_round(sheet: ET.Element, shared_strings: list[str], round_id: int) -> list[ET.Element]:
     sheet_data = sheet.find(f"{NS}sheetData")
     if sheet_data is None:
@@ -374,7 +385,13 @@ def write_round(group: str, payload: dict[str, Any]) -> dict[str, Any]:
 
     save_sheet(path, sheet)
     update_schedule_image(group)
-    return {"ok": True, "winnerIndex": winner_index, "totals": [score_text(total) for total in totals]}
+    score_images = update_score_images(payload)
+    return {
+        "ok": True,
+        "winnerIndex": winner_index,
+        "totals": [score_text(total) for total in totals],
+        "scoreImages": score_images,
+    }
 
 
 def write_advancement(group: str, payload: dict[str, Any]) -> dict[str, Any]:

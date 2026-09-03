@@ -394,6 +394,14 @@ def write_round(group: str, payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def generate_round_score_images(_: str, payload: dict[str, Any]) -> dict[str, Any]:
+    score_images = update_score_images(payload)
+    return {
+        "ok": True,
+        "scoreImages": score_images,
+    }
+
+
 def write_advancement(group: str, payload: dict[str, Any]) -> dict[str, Any]:
     path = workbook_path(group)
     _, sheet, shared_strings = open_sheet(path)
@@ -416,7 +424,10 @@ def write_advancement(group: str, payload: dict[str, Any]) -> dict[str, Any]:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["load", "write-round", "write-advancement"])
+    parser.add_argument(
+        "command",
+        choices=["load", "write-round", "write-advancement", "generate-score-images"],
+    )
     parser.add_argument("--group", required=True)
     args = parser.parse_args()
 
@@ -427,6 +438,8 @@ def main() -> int:
             payload = json.load(sys.stdin)
             if args.command == "write-round":
                 result = write_round(args.group, payload)
+            elif args.command == "generate-score-images":
+                result = generate_round_score_images(args.group, payload)
             else:
                 result = write_advancement(args.group, payload)
         print(json.dumps(result, ensure_ascii=False))

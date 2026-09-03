@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import type {Dispatch, SetStateAction} from 'react';
 import ClockOverlay from './components/ClockOverlay';
 import {
@@ -84,6 +84,11 @@ const OBS_FADE_TRANSITION_NAME = '淡入淡出';
 const OBS_GROUP_SCENE_NAME = '组别';
 const OBS_ROUND_SCENE_NAME = '轮数';
 const OBS_ELIMINATION_ROUND_SOURCE_NAME = '淘汰赛.png';
+const OBS_SEMIFINAL_ROUND_SOURCE_NAME = '半决赛.png';
+const OBS_FINAL_ROUND_SOURCE_NAME = '总决赛.png';
+const OBS_SCORE_SCENE_NAME = '成绩';
+const OBS_SCORE_IMAGE_SOURCE_NAMES = ['score1.png', 'score2.png'];
+const OBS_TEMP_SCORE_IMAGE_DISPLAY_MS = 5000;
 
 const emptyRoundScore = (): RoundScoreState => ({
   status: 'idle',
@@ -217,6 +222,29 @@ const writeWorkbookRound = (
     },
   );
 
+const writeScoreImages = (
+  group: GroupKey,
+  round: MatchRound,
+  scoreState: RoundScoreState,
+) =>
+  requestJson<{
+    ok: boolean;
+    scoreImages?: {paths: [string, string]; songCount: 2 | 3};
+  }>(
+    `/api/groups/${group}/score-images`,
+    {
+      method: 'POST',
+      body: JSON.stringify({
+        roundId: round.id,
+        players: round.players,
+        songCount: scoreState.showSongThree ? 3 : 2,
+        songOne: scoreState.songOne,
+        songTwo: scoreState.songTwo,
+        songThree: scoreState.songThree,
+      }),
+    },
+  );
+
 const writeWorkbookAdvancement = (group: GroupKey, rounds: MatchRound[]) =>
   requestJson<{ok: boolean}>(`/api/groups/${group}/advance`, {
     method: 'POST',
@@ -224,12 +252,6 @@ const writeWorkbookAdvancement = (group: GroupKey, rounds: MatchRound[]) =>
   });
 
 const loadObsState = () => requestJson<ObsState>('/api/obs/state');
-
-const setObsScene = (sceneName: string) =>
-  requestJson<ObsState>('/api/obs/scene', {
-    method: 'POST',
-    body: JSON.stringify({sceneName}),
-  });
 
 const setObsTransition = (transitionName: string) =>
   requestJson<ObsState>('/api/obs/transition', {
@@ -253,10 +275,20 @@ const setObsExclusiveSceneItems = (sceneName: string, visibleSourceNames: string
     body: JSON.stringify({sceneName, visibleSourceNames}),
   });
 
+const setObsNamedSceneItemsEnabled = (
+  sceneName: string,
+  sourceNames: string[],
+  sceneItemEnabled: boolean,
+) =>
+  requestJson<ObsState>('/api/obs/named-scene-items', {
+    method: 'POST',
+    body: JSON.stringify({sceneName, sourceNames, sceneItemEnabled}),
+  });
+
 const switchObsSceneWithTransition = (
   sceneName: string,
   transitionName = OBS_VIDEO_TRANSITION_NAME,
-  restoreTransitionName = OBS_FADE_TRANSITION_NAME,
+  restoreTransitionName?: string,
 ) =>
   requestJson<ObsState>('/api/obs/scene-with-transition', {
     method: 'POST',
@@ -283,6 +315,9 @@ function CompetitionApp() {
   const [selectedObsScene, setSelectedObsScene] = useState('');
   const [obsLoadState, setObsLoadState] = useState<LoadState>('idle');
   const [obsMessage, setObsMessage] = useState('OBS 尚未连接。');
+  const [shouldHideScoreImagesOnNextSceneSwitch, setShouldHideScoreImagesOnNextSceneSwitch] =
+    useState(false);
+  const scoreImagesHideTimerRef = useRef<number | null>(null);
   const [statusText, setStatusText] = useState('请选择组别，然后加载参赛者名单。');
 
   const canLoad = selectedGroup !== null && loadState !== 'loading';
@@ -336,22 +371,58 @@ function CompetitionApp() {
     void refreshObsState(false);
   }, []);
 
-  const handleSwitchObsScene = async (sceneName: string) => {
-    if (!sceneName) return;
+  useEffect(
+    () => () => {
+      if (scoreImagesHideTimerRef.current !== null) {
+        window.clearTimeout(scoreImagesHideTimerRef.current);
+      }
+    },
+    [],
+  );
 
+  const clearScoreImagesHideTimer = () => {
+    if (scoreImagesHideTimerRef.current === null) return;
+
+    window.clearTimeout(scoreImagesHideTimerRef.current);
+    scoreImagesHideTimerRef.current = null;
+  };
+
+  const hideObsScoreImages = async () => {
+    clearScoreImagesHideTimer();
+    const state = await setObsNamedSceneItemsEnabled(
+      OBS_SCORE_SCENE_NAME,
+      OBS_SCORE_IMAGE_SOURCE_NAMES,
+      false,
+    );
+    handleObsState(state);
+    setShouldHideScoreImagesOnNextSceneSwitch(false);
+    return state;
+  };
+
+  const handleSwitchObsScene = async (sceneName: string) => {
+    if (!sceneName) return false;
+
+    const transitionName =
+      sceneName === '上机' ? OBS_VIDEO_TRANSITION_NAME : OBS_FADE_TRANSITION_NAME;
     setObsLoadState('loading');
-    setStatusText(`正在切换 OBS 到“${sceneName}”...`);
+    setStatusText(`正在用“${transitionName}”切换 OBS 到“${sceneName}”...`);
     try {
-      const state = await setObsScene(sceneName);
+      if (shouldHideScoreImagesOnNextSceneSwitch) {
+        await hideObsScoreImages();
+      }
+
+      const state = await switchObsSceneWithTransition(sceneName, transitionName);
       handleObsState(state);
       setObsLoadState('loaded');
-      setObsMessage(`当前 OBS 场景：${state.currentScene ?? sceneName}`);
-      setStatusText(`OBS 已切换到“${sceneName}”。`);
+      setObsMessage(`当前 OBS 场景：${state.currentScene ?? sceneName}，转场：${transitionName}`);
+      setStatusText(`OBS 已用“${transitionName}”切换到“${sceneName}”。`);
+      return true;
     } catch (error) {
       setObsLoadState(obsState ? 'loaded' : 'idle');
       const message = error instanceof Error ? error.message : 'OBS 场景切换失败';
       setObsMessage(message);
       setStatusText(message);
+      return false;
     }
   };
 
@@ -406,25 +477,40 @@ function CompetitionApp() {
     }
   };
 
-  const handleSwitchObsSceneWithVideo = async (sceneName: string) => {
+  const showObsScoreImagesUntilNextSceneSwitch = async (autoHideMs?: number) => {
+    clearScoreImagesHideTimer();
     setObsLoadState('loading');
-    setStatusText(`正在用“${OBS_VIDEO_TRANSITION_NAME}”切换 OBS 到“${sceneName}”...`);
     try {
-      const state = await switchObsSceneWithTransition(sceneName);
+      const state = await setObsNamedSceneItemsEnabled(
+        OBS_SCORE_SCENE_NAME,
+        OBS_SCORE_IMAGE_SOURCE_NAMES,
+        true,
+      );
       handleObsState(state);
       setObsLoadState('loaded');
+      setShouldHideScoreImagesOnNextSceneSwitch(true);
+      if (autoHideMs) {
+        scoreImagesHideTimerRef.current = window.setTimeout(() => {
+          void hideObsScoreImages()
+            .then(() => {
+              setObsMessage('OBS 成绩图已自动隐藏。');
+            })
+            .catch((error) => {
+              const message = error instanceof Error ? error.message : 'OBS 成绩图自动隐藏失败';
+              setObsMessage(message);
+            });
+        }, autoHideMs);
+      }
       setObsMessage(
-        `OBS 已切换到“${sceneName}”，转场已恢复为“${OBS_FADE_TRANSITION_NAME}”。`,
-      );
-      setStatusText(
-        `OBS 已用“${OBS_VIDEO_TRANSITION_NAME}”切换到“${sceneName}”，并恢复“${OBS_FADE_TRANSITION_NAME}”。`,
+        autoHideMs
+          ? `OBS 成绩图已显示，约 ${Math.round(autoHideMs / 1000)} 秒后自动隐藏。`
+          : 'OBS 成绩图已显示，下次切换场景时会自动隐藏。',
       );
       return true;
     } catch (error) {
       setObsLoadState(obsState ? 'loaded' : 'idle');
-      const message = error instanceof Error ? error.message : 'OBS 视频转场切换失败';
+      const message = error instanceof Error ? error.message : 'OBS 成绩图显示失败';
       setObsMessage(message);
-      setStatusText(message);
       return false;
     }
   };
@@ -478,12 +564,12 @@ function CompetitionApp() {
     const roundUpdated = await applyObsExclusiveItems(OBS_ROUND_SCENE_NAME, [
       OBS_ELIMINATION_ROUND_SOURCE_NAME,
     ]);
-    const sceneUpdated = await handleSwitchObsSceneWithVideo('赛程');
+    const sceneUpdated = await handleSwitchObsScene('赛程');
 
     setStatusText(
       `${loadedGroup} 组淘汰赛控制页已打开。${
         roundUpdated ? 'OBS “轮数”已只显示淘汰赛。' : 'OBS “轮数”同步失败。'
-      }${sceneUpdated ? 'OBS 已切换到赛程并恢复淡入淡出。' : 'OBS 场景切换失败。'}`,
+      }${sceneUpdated ? 'OBS 已切换到赛程。' : 'OBS 场景切换失败。'}`,
     );
   };
 
@@ -494,10 +580,19 @@ function CompetitionApp() {
     try {
       setStatusText(`正在写入 ${loadedGroup} 组半决赛选手...`);
       await writeWorkbookAdvancement(loadedGroup, nextRounds);
+      setStatusText(`正在设置 OBS 半决赛轮数与抽选场景...`);
+      const roundUpdated = await applyObsExclusiveItems(OBS_ROUND_SCENE_NAME, [
+        OBS_SEMIFINAL_ROUND_SOURCE_NAME,
+      ]);
+      const sceneUpdated = await handleSwitchObsScene('抽选');
       setSemifinalRounds(nextRounds);
       setSemifinalScores(createInitialScores(nextRounds));
       setPage('semifinal');
-      setStatusText(`${loadedGroup} 组半决赛选手已写入表格。`);
+      setStatusText(
+        `${loadedGroup} 组半决赛选手已写入表格。${
+          roundUpdated ? 'OBS “轮数”已只显示半决赛。' : 'OBS “轮数”同步失败。'
+        }${sceneUpdated ? 'OBS 已切换到抽选。' : 'OBS 场景切换失败。'}`,
+      );
     } catch (error) {
       setStatusText(error instanceof Error ? error.message : '半决赛写入失败');
     }
@@ -510,20 +605,93 @@ function CompetitionApp() {
     try {
       setStatusText(`正在写入 ${loadedGroup} 组决赛选手...`);
       await writeWorkbookAdvancement(loadedGroup, nextRounds);
+      setStatusText(`正在设置 OBS 决赛轮数与抽选场景...`);
+      const roundUpdated = await applyObsExclusiveItems(OBS_ROUND_SCENE_NAME, [
+        OBS_FINAL_ROUND_SOURCE_NAME,
+      ]);
+      const sceneUpdated = await handleSwitchObsScene('抽选');
       setFinalRounds(nextRounds);
       setFinalScores(createInitialScores(nextRounds));
       setPage('final');
-      setStatusText(`${loadedGroup} 组决赛选手已写入表格。`);
+      setStatusText(
+        `${loadedGroup} 组决赛选手已写入表格。${
+          roundUpdated ? 'OBS “轮数”已只显示决赛。' : 'OBS “轮数”同步失败。'
+        }${sceneUpdated ? 'OBS 已切换到抽选。' : 'OBS 场景切换失败。'}`,
+      );
     } catch (error) {
       setStatusText(error instanceof Error ? error.message : '决赛写入失败');
     }
   };
 
-  const handleReturnHomeFromFinal = () => {
+  const handleReturnHomeFromFinal = async () => {
     if (!canReturnHomeFromFinal) return;
 
+    setObsLoadState('loading');
+    setStatusText(`正在用“${OBS_VIDEO_TRANSITION_NAME}”切回赛程...`);
+    let obsUpdated = false;
+    try {
+      if (shouldHideScoreImagesOnNextSceneSwitch) {
+        await hideObsScoreImages();
+      }
+
+      const state = await switchObsSceneWithTransition(
+        '赛程',
+        OBS_VIDEO_TRANSITION_NAME,
+        OBS_FADE_TRANSITION_NAME,
+      );
+      handleObsState(state);
+      setObsLoadState('loaded');
+      setObsMessage(
+        `OBS 已切回赛程，转场已恢复为“${OBS_FADE_TRANSITION_NAME}”。`,
+      );
+      obsUpdated = true;
+    } catch (error) {
+      setObsLoadState(obsState ? 'loaded' : 'idle');
+      const message = error instanceof Error ? error.message : 'OBS 回到赛程失败';
+      setObsMessage(message);
+    }
+
     setPage('home');
-    setStatusText(`${loadedGroup} 组决赛已结束，已返回比赛控制首页。`);
+    setStatusText(
+      `${loadedGroup} 组决赛已结束，已返回比赛控制首页。${
+        obsUpdated ? 'OBS 已用插入视频切回赛程并恢复淡入淡出。' : 'OBS 回到赛程失败。'
+      }`,
+    );
+  };
+
+  const handleShowFinalSongThree = async (roundId: number) => {
+    if (!loadedGroup) return;
+
+    const round = finalRounds.find((item) => item.id === roundId);
+    if (!round) {
+      setStatusText(`决赛 ${roundId} 未找到回合信息。`);
+      return;
+    }
+
+    const scoreState = {
+      ...(finalScores[roundId] ?? emptyRoundScore()),
+      status: 'playing' as const,
+      showSongTwo: true,
+      showSongThree: false,
+    };
+
+    let scoreImagesVisible = false;
+    try {
+      setStatusText('正在生成前两首成绩图...');
+      await writeScoreImages(loadedGroup, round, scoreState);
+      scoreImagesVisible = await showObsScoreImagesUntilNextSceneSwitch(
+        OBS_TEMP_SCORE_IMAGE_DISPLAY_MS,
+      );
+    } catch (error) {
+      setObsMessage(error instanceof Error ? error.message : '前两首成绩图显示失败');
+    }
+
+    showSongThree(setFinalScores, roundId, '决赛');
+    setStatusText(
+      `决赛 ${roundId} 已进入曲目 3。${
+        scoreImagesVisible ? '前两首成绩图已显示约 5 秒。' : '前两首成绩图显示失败。'
+      }`,
+    );
   };
 
   const updateScore = (
@@ -640,9 +808,11 @@ function CompetitionApp() {
       showSongThree: forceSongThree ? true : (currentScores[roundId] ?? emptyRoundScore()).showSongThree,
     };
 
+    let scoreImagesVisible = false;
     try {
       setStatusText(`正在写入 ${stageName} ${roundId} 成绩并生成成绩图...`);
       await writeWorkbookRound(loadedGroup, round, nextRoundState);
+      scoreImagesVisible = await showObsScoreImagesUntilNextSceneSwitch();
     } catch (error) {
       setStatusText(error instanceof Error ? error.message : `${stageName} ${roundId} 写入失败`);
       return;
@@ -652,7 +822,11 @@ function CompetitionApp() {
       ...currentScores,
       [roundId]: nextRoundState,
     }));
-    setStatusText(`${stageName} ${roundId} 已结束，成绩已写入表格和直播成绩图。`);
+    setStatusText(
+      `${stageName} ${roundId} 已结束，成绩已写入表格和直播成绩图。${
+        scoreImagesVisible ? 'OBS 成绩图已显示。' : 'OBS 成绩图显示失败。'
+      }`,
+    );
   };
 
   return (
@@ -691,7 +865,6 @@ function CompetitionApp() {
             onSelectObsScene={setSelectedObsScene}
             onStartCompetition={handleStartCompetition}
             onSwitchObsScene={handleSwitchObsScene}
-            onSwitchObsSceneWithVideo={handleSwitchObsSceneWithVideo}
             onSwitchObsTransition={handleSwitchObsTransition}
             onToggleObsSceneItem={handleToggleObsSceneItem}
             participants={participants}
@@ -703,6 +876,8 @@ function CompetitionApp() {
           <EliminationPage
             canStartSemifinals={canStartSemifinals}
             loadedGroup={loadedGroup}
+            obsLoadState={obsLoadState}
+            obsState={obsState}
             onBack={() => setPage('home')}
             onFinishRound={(roundId) =>
               finishRound(setRoundScores, roundScores, rounds, roundId, '淘汰赛回合')
@@ -719,6 +894,8 @@ function CompetitionApp() {
           <SemifinalPage
             canStartFinals={canStartFinals}
             loadedGroup={loadedGroup}
+            obsLoadState={obsLoadState}
+            obsState={obsState}
             onBack={() => setPage('elimination')}
             onFinishRound={(roundId) =>
               finishRound(setSemifinalScores, semifinalScores, semifinalRounds, roundId, '半决赛')
@@ -735,12 +912,14 @@ function CompetitionApp() {
           <FinalPage
             canReturnHome={canReturnHomeFromFinal}
             loadedGroup={loadedGroup}
+            obsLoadState={obsLoadState}
+            obsState={obsState}
             onBack={() => setPage('semifinal')}
             onFinishRound={(roundId) =>
               finishRound(setFinalScores, finalScores, finalRounds, roundId, '决赛', true)
             }
             onReturnHome={handleReturnHomeFromFinal}
-            onShowSongThree={(roundId) => showSongThree(setFinalScores, roundId, '决赛')}
+            onShowSongThree={handleShowFinalSongThree}
             onShowSongTwo={(roundId) => showSongTwo(setFinalScores, roundId, '决赛')}
             onStartRound={(roundId) => startRound(setFinalScores, roundId, '决赛')}
             onSwitchObsScene={handleSwitchObsScene}
@@ -750,7 +929,27 @@ function CompetitionApp() {
           />
         )}
       </div>
+
+      <ObsSceneBadge obsLoadState={obsLoadState} obsState={obsState} />
     </main>
+  );
+}
+
+function ObsSceneBadge({
+  obsLoadState,
+  obsState,
+}: {
+  obsLoadState: LoadState;
+  obsState: ObsState | null;
+}) {
+  const isLoading = obsLoadState === 'loading';
+  const sceneText = obsState?.currentScene ?? (isLoading ? '读取中' : '未连接');
+
+  return (
+    <aside className="obs-scene-badge" aria-live="polite">
+      <span className="obs-scene-badge-label">当前场景</span>
+      <span className="obs-scene-badge-value">{sceneText}</span>
+    </aside>
   );
 }
 
@@ -769,7 +968,6 @@ function HomePage({
   onSelectObsScene,
   onStartCompetition,
   onSwitchObsScene,
-  onSwitchObsSceneWithVideo,
   onSwitchObsTransition,
   onToggleObsSceneItem,
   participants,
@@ -791,7 +989,6 @@ function HomePage({
   onSelectObsScene: (sceneName: string) => void;
   onStartCompetition: () => void;
   onSwitchObsScene: (sceneName: string) => void;
-  onSwitchObsSceneWithVideo: (sceneName: string) => void;
   onSwitchObsTransition: (transitionName: string) => void;
   onToggleObsSceneItem: (sceneName: string, item: ObsSceneItem) => void;
   participants: Participant[];
@@ -862,7 +1059,6 @@ function HomePage({
           onRefresh={onRefreshObs}
           onSelectScene={onSelectObsScene}
           onSwitchScene={onSwitchObsScene}
-          onSwitchSceneWithVideo={onSwitchObsSceneWithVideo}
           onSwitchTransition={onSwitchObsTransition}
           onToggleSceneItem={onToggleObsSceneItem}
           selectedSceneName={selectedObsScene}
@@ -963,7 +1159,6 @@ function SceneControlPanel({
   onRefresh,
   onSelectScene,
   onSwitchScene,
-  onSwitchSceneWithVideo,
   onSwitchTransition,
   onToggleSceneItem,
   selectedSceneName,
@@ -974,7 +1169,6 @@ function SceneControlPanel({
   onRefresh: () => void;
   onSelectScene: (sceneName: string) => void;
   onSwitchScene: (sceneName: string) => void;
-  onSwitchSceneWithVideo: (sceneName: string) => void;
   onSwitchTransition: (transitionName: string) => void;
   onToggleSceneItem: (sceneName: string, item: ObsSceneItem) => void;
   selectedSceneName: string;
@@ -1021,18 +1215,12 @@ function SceneControlPanel({
             sceneName="等待"
             onSwitchScene={onSwitchScene}
           />
-          <button
-            className={[
-              'action-button',
-              obsState?.currentScene === '开幕' ? 'action-button-primary' : '',
-            ].join(' ')}
+          <SceneShortcutButton
             disabled={isBusy || (hasConnection && !availableSceneNames.has('开幕'))}
-            onClick={() => onSwitchSceneWithVideo('开幕')}
-            type="button"
-          >
-            <Trophy className="h-4 w-4" aria-hidden="true" />
-            开幕
-          </button>
+            isActive={obsState?.currentScene === '开幕'}
+            sceneName="开幕"
+            onSwitchScene={onSwitchScene}
+          />
         </div>
 
         <p className="text-sm text-[#657284]">{message}</p>
@@ -1144,6 +1332,8 @@ function SceneControlPanel({
 function EliminationPage({
   canStartSemifinals,
   loadedGroup,
+  obsLoadState,
+  obsState,
   onBack,
   onFinishRound,
   onShowSongTwo,
@@ -1156,6 +1346,8 @@ function EliminationPage({
 }: {
   canStartSemifinals: boolean;
   loadedGroup: GroupKey | null;
+  obsLoadState: LoadState;
+  obsState: ObsState | null;
   onBack: () => void;
   onFinishRound: (roundId: number) => void;
   onShowSongTwo: (roundId: number) => void;
@@ -1171,6 +1363,12 @@ function EliminationPage({
   roundScores: Record<number, RoundScoreState>;
   rounds: MatchRound[];
 }) {
+  const isObsBusy = obsLoadState === 'loading';
+  const hasObsConnection = Boolean(obsState?.connected);
+  const availableSceneNames = new Set(obsState?.scenes.map((scene) => scene.name) ?? []);
+  const isSceneUnavailable = (sceneName: string) =>
+    isObsBusy || (hasObsConnection && !availableSceneNames.has(sceneName));
+
   return (
     <section className="flex flex-1 flex-col gap-5 py-5">
       <div className="flex flex-col gap-3 border border-[#d7dce8] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -1187,9 +1385,24 @@ function EliminationPage({
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
-          <SceneShortcutButton sceneName="赛程" onSwitchScene={onSwitchObsScene} />
-          <SceneShortcutButton sceneName="抽选" onSwitchScene={onSwitchObsScene} />
-          <SceneShortcutButton sceneName="上机" onSwitchScene={onSwitchObsScene} />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('赛程')}
+            isActive={obsState?.currentScene === '赛程'}
+            sceneName="赛程"
+            onSwitchScene={onSwitchObsScene}
+          />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('抽选')}
+            isActive={obsState?.currentScene === '抽选'}
+            sceneName="抽选"
+            onSwitchScene={onSwitchObsScene}
+          />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('上机')}
+            isActive={obsState?.currentScene === '上机'}
+            sceneName="上机"
+            onSwitchScene={onSwitchObsScene}
+          />
           <button
             className="action-button action-button-primary"
             disabled={!canStartSemifinals}
@@ -1223,6 +1436,8 @@ function EliminationPage({
 function SemifinalPage({
   canStartFinals,
   loadedGroup,
+  obsLoadState,
+  obsState,
   onBack,
   onFinishRound,
   onShowSongTwo,
@@ -1235,6 +1450,8 @@ function SemifinalPage({
 }: {
   canStartFinals: boolean;
   loadedGroup: GroupKey | null;
+  obsLoadState: LoadState;
+  obsState: ObsState | null;
   onBack: () => void;
   onFinishRound: (roundId: number) => void;
   onShowSongTwo: (roundId: number) => void;
@@ -1250,6 +1467,12 @@ function SemifinalPage({
   roundScores: Record<number, RoundScoreState>;
   rounds: MatchRound[];
 }) {
+  const isObsBusy = obsLoadState === 'loading';
+  const hasObsConnection = Boolean(obsState?.connected);
+  const availableSceneNames = new Set(obsState?.scenes.map((scene) => scene.name) ?? []);
+  const isSceneUnavailable = (sceneName: string) =>
+    isObsBusy || (hasObsConnection && !availableSceneNames.has(sceneName));
+
   return (
     <section className="flex flex-1 flex-col gap-5 py-5">
       <div className="flex flex-col gap-3 border border-[#d7dce8] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -1266,9 +1489,24 @@ function SemifinalPage({
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
-          <SceneShortcutButton sceneName="赛程" onSwitchScene={onSwitchObsScene} />
-          <SceneShortcutButton sceneName="抽选" onSwitchScene={onSwitchObsScene} />
-          <SceneShortcutButton sceneName="上机" onSwitchScene={onSwitchObsScene} />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('赛程')}
+            isActive={obsState?.currentScene === '赛程'}
+            sceneName="赛程"
+            onSwitchScene={onSwitchObsScene}
+          />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('抽选')}
+            isActive={obsState?.currentScene === '抽选'}
+            sceneName="抽选"
+            onSwitchScene={onSwitchObsScene}
+          />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('上机')}
+            isActive={obsState?.currentScene === '上机'}
+            sceneName="上机"
+            onSwitchScene={onSwitchObsScene}
+          />
           <button
             className="action-button action-button-primary"
             disabled={!canStartFinals}
@@ -1303,6 +1541,8 @@ function SemifinalPage({
 function FinalPage({
   canReturnHome,
   loadedGroup,
+  obsLoadState,
+  obsState,
   onBack,
   onFinishRound,
   onReturnHome,
@@ -1316,6 +1556,8 @@ function FinalPage({
 }: {
   canReturnHome: boolean;
   loadedGroup: GroupKey | null;
+  obsLoadState: LoadState;
+  obsState: ObsState | null;
   onBack: () => void;
   onFinishRound: (roundId: number) => void;
   onReturnHome: () => void;
@@ -1332,6 +1574,12 @@ function FinalPage({
   roundScores: Record<number, RoundScoreState>;
   rounds: MatchRound[];
 }) {
+  const isObsBusy = obsLoadState === 'loading';
+  const hasObsConnection = Boolean(obsState?.connected);
+  const availableSceneNames = new Set(obsState?.scenes.map((scene) => scene.name) ?? []);
+  const isSceneUnavailable = (sceneName: string) =>
+    isObsBusy || (hasObsConnection && !availableSceneNames.has(sceneName));
+
   return (
     <section className="flex flex-1 flex-col gap-5 py-5">
       <div className="flex flex-col gap-3 border border-[#d7dce8] bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:p-5">
@@ -1348,9 +1596,24 @@ function FinalPage({
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
-          <SceneShortcutButton sceneName="赛程" onSwitchScene={onSwitchObsScene} />
-          <SceneShortcutButton sceneName="抽选" onSwitchScene={onSwitchObsScene} />
-          <SceneShortcutButton sceneName="上机" onSwitchScene={onSwitchObsScene} />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('赛程')}
+            isActive={obsState?.currentScene === '赛程'}
+            sceneName="赛程"
+            onSwitchScene={onSwitchObsScene}
+          />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('抽选')}
+            isActive={obsState?.currentScene === '抽选'}
+            sceneName="抽选"
+            onSwitchScene={onSwitchObsScene}
+          />
+          <SceneShortcutButton
+            disabled={isSceneUnavailable('上机')}
+            isActive={obsState?.currentScene === '上机'}
+            sceneName="上机"
+            onSwitchScene={onSwitchObsScene}
+          />
           <button
             className="action-button action-button-primary"
             disabled={!canReturnHome}

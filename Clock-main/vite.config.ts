@@ -227,31 +227,18 @@ function createObsClient(obsWebSocketUrl: string, obsWebSocketPassword: string) 
 }
 
 async function getObsSnapshot(obsClient: ReturnType<typeof createObsClient>) {
-  const sceneData = (await obsClient.request('GetSceneList')) as {
-    currentProgramSceneName?: string;
-    scenes?: Array<{sceneName: string; sceneIndex?: number}>;
-  };
-  const transitionData = (await obsClient.request('GetTransitionList')) as {
-    currentSceneTransitionName?: string;
-    transitions?: Array<{transitionName: string; transitionKind?: string; transitionFixed?: boolean}>;
-  };
-  const currentTransition = (await obsClient.request('GetCurrentSceneTransition')) as {
-    transitionName?: string;
-    transitionKind?: string;
-  };
+  const sceneData = await getObsSceneList(obsClient);
+  const transitionData = await getObsTransitionList(obsClient);
+  const currentTransition = await getObsCurrentTransition(obsClient);
 
   const scenes = await Promise.all(
     (sceneData.scenes ?? []).map(async (scene) => {
-      const itemData = (await obsClient.request('GetSceneItemList', {
-        sceneName: scene.sceneName,
-      })) as {
-        sceneItems?: ObsSceneItemResponse[];
-      };
+      const items = await getObsSceneItemsSafe(obsClient, scene.sceneName);
 
       return {
         name: scene.sceneName,
         index: scene.sceneIndex,
-        items: (itemData.sceneItems ?? []).map((item) => ({
+        items: items.map((item) => ({
           id: item.sceneItemId,
           name: item.sourceName,
           enabled: item.sceneItemEnabled,
@@ -275,6 +262,75 @@ async function getObsSnapshot(obsClient: ReturnType<typeof createObsClient>) {
   };
 }
 
+async function getObsSceneList(obsClient: ReturnType<typeof createObsClient>) {
+  return (await obsClient.request('GetSceneList')) as {
+    currentProgramSceneName?: string;
+    scenes?: Array<{sceneName: string; sceneIndex?: number}>;
+  };
+}
+
+async function getObsCurrentProgramSceneName(obsClient: ReturnType<typeof createObsClient>) {
+  const sceneData = (await obsClient.request('GetCurrentProgramScene')) as {
+    currentProgramSceneName?: string;
+  };
+
+  return sceneData.currentProgramSceneName;
+}
+
+async function getObsTransitionList(obsClient: ReturnType<typeof createObsClient>) {
+  try {
+    return (await obsClient.request('GetSceneTransitionList')) as {
+      currentSceneTransitionName?: string;
+      transitions?: Array<{
+        transitionName: string;
+        transitionKind?: string;
+        transitionFixed?: boolean;
+      }>;
+    };
+  } catch {
+    try {
+      return (await obsClient.request('GetTransitionList')) as {
+        currentSceneTransitionName?: string;
+        transitions?: Array<{
+          transitionName: string;
+          transitionKind?: string;
+          transitionFixed?: boolean;
+        }>;
+      };
+    } catch {
+      return {transitions: []};
+    }
+  }
+}
+
+async function getObsCurrentTransition(obsClient: ReturnType<typeof createObsClient>) {
+  try {
+    return (await obsClient.request('GetCurrentSceneTransition')) as {
+      transitionName?: string;
+      transitionKind?: string;
+    };
+  } catch {
+    return {};
+  }
+}
+
+async function getObsSnapshotAfterSceneAction(
+  obsClient: ReturnType<typeof createObsClient>,
+  fallbackSceneName: string,
+) {
+  try {
+    return await getObsSnapshot(obsClient);
+  } catch {
+    return {
+      connected: true,
+      currentScene: (await getObsCurrentProgramSceneName(obsClient)) ?? fallbackSceneName,
+      currentTransition: undefined,
+      scenes: [],
+      transitions: [],
+    };
+  }
+}
+
 async function getObsSceneItems(
   obsClient: ReturnType<typeof createObsClient>,
   sceneName: string,
@@ -285,12 +341,29 @@ async function getObsSceneItems(
       sceneItems?: ObsSceneItemResponse[];
     };
   } catch {
-    itemData = (await obsClient.request('GetGroupSceneItemList', {sceneName})) as {
-      sceneItems?: ObsSceneItemResponse[];
-    };
+    try {
+      itemData = (await obsClient.request('GetGroupSceneItemList', {sceneName})) as {
+        sceneItems?: ObsSceneItemResponse[];
+      };
+    } catch {
+      itemData = (await obsClient.request('GetGroupSceneItemList', {groupName: sceneName})) as {
+        sceneItems?: ObsSceneItemResponse[];
+      };
+    }
   }
 
   return itemData.sceneItems ?? [];
+}
+
+async function getObsSceneItemsSafe(
+  obsClient: ReturnType<typeof createObsClient>,
+  sceneName: string,
+) {
+  try {
+    return await getObsSceneItems(obsClient, sceneName);
+  } catch {
+    return [];
+  }
 }
 
 async function setExclusiveObsSceneItems(
@@ -331,6 +404,43 @@ async function setExclusiveObsSceneItems(
   }
 }
 
+async function setNamedObsSceneItemsEnabled(
+  obsClient: ReturnType<typeof createObsClient>,
+  sceneName: string,
+  sourceNames: string[],
+  sceneItemEnabled: boolean,
+) {
+  const targetNames = new Set(sourceNames);
+  const items = await getObsSceneItems(obsClient, sceneName);
+
+  if (items.length === 0) {
+    throw new Error(`OBS 中未找到“${sceneName}”的素材项`);
+  }
+
+  const matchedNames = new Set<string>();
+  await Promise.all(
+    items
+      .filter((item) => targetNames.has(item.sourceName))
+      .map((item) => {
+        matchedNames.add(item.sourceName);
+        if (item.sceneItemEnabled === sceneItemEnabled) {
+          return Promise.resolve();
+        }
+
+        return obsClient.request('SetSceneItemEnabled', {
+          sceneName,
+          sceneItemId: item.sceneItemId,
+          sceneItemEnabled,
+        });
+      }),
+  );
+
+  const missingNames = sourceNames.filter((name) => !matchedNames.has(name));
+  if (missingNames.length > 0) {
+    throw new Error(`OBS “${sceneName}”中未找到素材：${missingNames.join('、')}`);
+  }
+}
+
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -339,11 +449,15 @@ async function switchObsSceneWithTransition(
   obsClient: ReturnType<typeof createObsClient>,
   sceneName: string,
   transitionName: string,
-  restoreTransitionName: string,
+  restoreTransitionName?: string,
   restoreDelayMs = OBS_RESTORE_TRANSITION_DELAY_MS,
 ) {
   await obsClient.request('SetCurrentSceneTransition', {transitionName});
   await obsClient.request('SetCurrentProgramScene', {sceneName});
+
+  if (!restoreTransitionName) {
+    return;
+  }
 
   if (restoreDelayMs > 0) {
     await wait(restoreDelayMs);
@@ -456,7 +570,11 @@ export default defineConfig(({mode}) => {
                   await obsClient.request('SetCurrentProgramScene', {
                     sceneName: body.sceneName,
                   });
-                  sendJson(res, 200, await getObsSnapshot(obsClient));
+                  sendJson(
+                    res,
+                    200,
+                    await getObsSnapshotAfterSceneAction(obsClient, body.sceneName),
+                  );
                   return;
                 }
 
@@ -525,6 +643,34 @@ export default defineConfig(({mode}) => {
                   return;
                 }
 
+                if (req.method === 'POST' && obsAction === 'named-scene-items') {
+                  const body = (await readJsonBody(req)) as {
+                    sceneName?: string;
+                    sourceNames?: string[];
+                    sceneItemEnabled?: boolean;
+                  };
+                  if (
+                    !body.sceneName ||
+                    !Array.isArray(body.sourceNames) ||
+                    body.sourceNames.some((name) => typeof name !== 'string') ||
+                    typeof body.sceneItemEnabled !== 'boolean'
+                  ) {
+                    sendJson(res, 400, {
+                      error: '缺少 sceneName、sourceNames 或 sceneItemEnabled',
+                    });
+                    return;
+                  }
+
+                  await setNamedObsSceneItemsEnabled(
+                    obsClient,
+                    body.sceneName,
+                    body.sourceNames,
+                    body.sceneItemEnabled,
+                  );
+                  sendJson(res, 200, await getObsSnapshot(obsClient));
+                  return;
+                }
+
                 if (req.method === 'POST' && obsAction === 'scene-with-transition') {
                   const body = (await readJsonBody(req)) as {
                     sceneName?: string;
@@ -532,9 +678,9 @@ export default defineConfig(({mode}) => {
                     restoreTransitionName?: string;
                     restoreDelayMs?: number;
                   };
-                  if (!body.sceneName || !body.transitionName || !body.restoreTransitionName) {
+                  if (!body.sceneName || !body.transitionName) {
                     sendJson(res, 400, {
-                      error: '缺少 sceneName、transitionName 或 restoreTransitionName',
+                      error: '缺少 sceneName 或 transitionName',
                     });
                     return;
                   }
@@ -548,7 +694,11 @@ export default defineConfig(({mode}) => {
                       ? body.restoreDelayMs
                       : OBS_RESTORE_TRANSITION_DELAY_MS,
                   );
-                  sendJson(res, 200, await getObsSnapshot(obsClient));
+                  sendJson(
+                    res,
+                    200,
+                    await getObsSnapshotAfterSceneAction(obsClient, body.sceneName),
+                  );
                   return;
                 }
 
@@ -578,6 +728,13 @@ export default defineConfig(({mode}) => {
               if (req.method === 'POST' && route.action === 'round') {
                 const body = await readJsonBody(req);
                 const result = await runScheduleScript('write-round', route.group, body);
+                sendJson(res, 200, result);
+                return;
+              }
+
+              if (req.method === 'POST' && route.action === 'score-images') {
+                const body = await readJsonBody(req);
+                const result = await runScheduleScript('generate-score-images', route.group, body);
                 sendJson(res, 200, result);
                 return;
               }

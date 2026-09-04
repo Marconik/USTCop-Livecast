@@ -1,6 +1,12 @@
 # USTCop-Livecast
 USTC舞萌比赛直播程序，基于OBS、Python和Node.js
 
+
+
+[TOC]
+
+------
+
 ## 准备工作
 
 ### 人员准备
@@ -68,12 +74,158 @@ USTC舞萌比赛直播程序，基于OBS、Python和Node.js
 
 <img src="README.assets/流程.png" alt="流程" style="zoom: 33%;" />
 
+### 比赛规则
+
+<img src="README.assets/image-20260903204442281.png" alt="image-20260903204442281" style="zoom:50%;" />
+
 ## 设备准备
 
 首先直播需要有以下软件基础：
 
-- 最新的OBS直播程序
-- 比较新的Node.js和npm
-- 比较新的Python
+- OBS 28 或更新版本，并启用 WebSocket Server
+- Node.js 18 或更新版本（自带 npm）
+- Python 3.11 或更新版本
 
-Python的依赖可以开虚拟环境安装，网页依赖直接Node.js一键安装
+拥有上述软件之后即可克隆仓库，建议克隆到`E:\USTCop\`下保证原始兼容
+
+### OBS设置
+
+#### DroidCam
+
+OBS需要安装插件：[DroidCam OBS Plugin](https://droidcam.app/obs/#top)
+
+安装完成之后，重新启动OBS，应该可以看见”源“里面可以新建**DroidCam OBS**媒体源（注意不是DroidCam）
+
+<img src="README.assets/image-20260903204859457.png" alt="image-20260903204859457" style="zoom: 33%;" />
+
+<img src="README.assets/image-20260903204927612.png" alt="image-20260903204927612" style="zoom: 33%;" />
+
+> [!NOTE]
+>
+> DroidCam需要在同一WiFi环境下使用，建议提前在手机上安装并测试DroidCam软件是否能成功推送画面
+>
+> 由于DroidCam使用裁切画质而不是差分画质，使用最低或者次低分辨率即可
+
+#### 推流和被控制
+
+使用OBS作为虚拟摄像头启动，在**哔哩哔哩直播姬**中监看OBS虚拟摄像头作为B站直播设置，可以添加透明弹幕窗格
+
+<img src="README.assets/image-20260903205504670.png" alt="image-20260903205504670" style="zoom: 50%;" />
+
+<img src="README.assets/image-20260903210916441.png" alt="image-20260903210916441" style="zoom:33%;" />
+
+输出模式选择简单即可，视频编码器和预设根据自己电脑的状况选择（也就是哪个卡顿就换另一个）
+
+<img src="README.assets/image-20260903210021036.png" alt="image-20260903210021036" style="zoom:50%;" />
+
+音频设置应该不需要更改，48kHz立体声即可，视频选择输出格式为1920×1080的60FPS
+
+> [!NOTE]
+>
+> **建议在OBS中开启录制**，而不是在直播姬中，主要原因是直播姬的视频编码有问题，可能在一些软件上无法正常播放或者处理
+
+在"工具"里面配置WebSocket服务器设置，选择“开启WebSocket服务器”，关闭“开启身份验证”，服务器端口选择4455
+
+<img src="README.assets/image-20260903211216890.png" alt="image-20260903211216890" style="zoom:33%;" /><img src="README.assets/image-20260903211354149.png" alt="image-20260903211354149" style="zoom:33%;" />
+
+#### 场景资源
+
+接下来添加场景预设并布置场景。场景在“场景集合”里面进行导入，选择“导入”之后选择仓库下`\Broadcast\未命名.json`即可一键导入所有场景。**如果提示缺少资源文件，只需要让他在`\Broadcast`文件夹下面自动寻找**
+
+导入场景之后应该有如下的场景部署
+
+<img src="README.assets/image-20260903211928352.png" alt="image-20260903211928352" style="zoom:50%;" />
+
+- 等待：一个计时钟，在每一组比赛的间隔播放，**等待环节不需要录制**
+
+  <img src="README.assets/image-20260903212311337.png" alt="image-20260903212311337" style="zoom:33%;" />
+
+- 开幕：主摄像头，横构图，用来每组比赛进入第一个回合之前的环节
+
+  <img src="README.assets/image-20260903212446875.png" alt="image-20260903212446875" style="zoom:33%;" />
+
+- 赛程：比赛的选手以及进度，在每一回合开始或者结束之前展示
+
+  <img src="README.assets/image-20260903212652323.png" alt="image-20260903212652323" style="zoom:33%;" />
+
+- 抽选：实际上比赛没有了抽选环节，所以这部分相当于介绍本回合选手、回合结束的感言、每组决赛结束后的颁奖，这部分中间也是一个横构图的主摄像头
+
+  <img src="README.assets/image-20260903212805410.png" alt="image-20260903212805410" style="zoom:33%;" />
+
+- 上机：比赛的核心环节，直播舞萌手元
+
+  <img src="README.assets/image-20260903212910789.png" alt="image-20260903212910789" style="zoom:33%;" />
+
+  另外转场动画里面还有一个视频转场，也可以拿出来试试
+
+> [!NOTE]
+>
+> 场景中的摄像头和音频还需要在赛场上进行绑定。绑定的方法就是
+>
+> - 选择上机场景，看到两个DroidCam源和音频输入采集
+> - 分别右键进入设置绑定三个源，其中第一个DroidCam源同时担当主摄**（如果主摄使用第三个摄像头替代，需要进行对应的调整）**
+> - 调整位置和缩放大小
+>
+> 直播中**蓝牙麦克风作为唯一的音频输入**，如果需要绑定机台的推流，**推流的音频仅在上机环节采集输入**
+>
+> 实际上比赛阶段并不需要进入OBS进行切换场景，所有流程在前端即可完成
+
+## 程序使用
+
+### 前端部署
+
+在新电脑上克隆或复制项目后，建议在项目根目录创建 Python 虚拟环境：
+
+```powershell
+py -3 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+网页控制台依赖在 `Clock-main` 目录安装：
+
+```powershell
+cd .\Clock-main
+npm ci
+Copy-Item .env.example .env
+npm run dev
+```
+
+**默认访问地址是 `http://localhost:3000/`**，OBS 浏览器源里的时钟地址是 `http://localhost:3000/clock`
+
+`Clock-main\.env` 中可以按需设置：
+
+```powershell
+PYTHON_PATH="../.venv/Scripts/python.exe"
+OBS_WS_URL="ws://127.0.0.1:4455"
+OBS_WS_PASSWORD=""
+```
+
+OBS 场景集合在 `Broadcast\未命名.json`。如果项目没有放在原来的 `E:\USTCop\USTCop-Livecast` 路径，导入后需要在 OBS 中重新定位 `Broadcast` 目录下的图片、GIF 和 WebM 素材，并重新选择麦克风、DroidCam、采集卡等设备源
+
+### 功能说明
+
+启动前端之后，浏览器可以打开http://localhost:3000/，访问前端控制页面
+
+<img src="README.assets/image-20260903214244323.png" alt="image-20260903214244323" style="zoom: 25%;" />
+
+可以先试试切换场景看一下是否能够成功控制OBS直播程序
+
+参赛名单放在文件夹下`GroupA~GroupE.xlsx`里面，前端在比赛进行的时候会自动写入剩下的数据。前端里面的数据缓存重置是在每次点击加载参赛者名单的时候，不会重置Excel表格
+
+加载完选手之后即可开始比赛
+
+<img src="README.assets/image-20260903214754406.png" alt="image-20260903214754406" style="zoom:25%;" />
+
+比赛分为淘汰赛、半决赛和决赛三个轮次，在决赛结束之后返回第一页
+
+<img src="README.assets/image-20260903214909783.png" alt="image-20260903214909783" style="zoom:25%;" />
+
+可以提前看一下每个页面每个键实现了什么功能，基本上和上一次USTCop的直播流程一样，这次大部分都实现了自动化。**不过比赛期间的场景需要手动切换，这个需要注意**
+
+<img src="README.assets/image-20260903215114231.png" alt="image-20260903215114231" style="zoom:25%;" />
+
+> [!IMPORTANT]
+>
+> 最后预祝各位staff圆满举办比赛，祝各位选手玩得开心、玩出精彩

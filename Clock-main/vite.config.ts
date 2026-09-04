@@ -12,11 +12,7 @@ const require = createRequire(import.meta.url);
 const WebSocket = require('ws') as any;
 
 const scheduleScript = path.resolve(__dirname, 'scripts/xlsx_schedule.py');
-const bundledPython = path.resolve(
-  process.env.USERPROFILE ?? '',
-  '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe',
-);
-const pythonExecutable = existsSync(bundledPython) ? bundledPython : 'python';
+const OBS_SCORE_IMAGE_SOURCE_NAMES = ['score1.png', 'score2.png'] as const;
 const OBS_REQUEST_TIMEOUT_MS = 5000;
 const OBS_RESTORE_TRANSITION_DELAY_MS = 2000;
 
@@ -441,8 +437,78 @@ async function setNamedObsSceneItemsEnabled(
   }
 }
 
+function normalizeObsFilePath(filePath: string) {
+  return path.resolve(filePath).replaceAll('\\', '/');
+}
+
+async function setObsScoreImageFiles(
+  obsClient: ReturnType<typeof createObsClient>,
+  imagePaths: string[],
+) {
+  if (imagePaths.length < OBS_SCORE_IMAGE_SOURCE_NAMES.length) {
+    throw new Error('缺少成绩图路径');
+  }
+
+  await Promise.all(
+    OBS_SCORE_IMAGE_SOURCE_NAMES.map((sourceName, index) => {
+      const rawImagePath = String(imagePaths[index] ?? '').trim();
+      if (!rawImagePath) {
+        throw new Error(`缺少 ${sourceName} 的成绩图路径`);
+      }
+
+      const imagePath = normalizeObsFilePath(rawImagePath);
+      if (!existsSync(imagePath)) {
+        throw new Error(`成绩图不存在：${imagePath}`);
+      }
+
+      return obsClient.request('SetInputSettings', {
+        inputName: sourceName,
+        inputSettings: {
+          file: imagePath,
+        },
+        overlay: true,
+      });
+    }),
+  );
+}
+
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function resolveCommandPath(command: string) {
+  if (path.isAbsolute(command) || /[\\/]/.test(command)) {
+    return path.resolve(__dirname, command);
+  }
+
+  return command;
+}
+
+function resolvePythonExecutable(env: Record<string, string>) {
+  const configuredPython = env.PYTHON_PATH || env.PYTHON_EXECUTABLE;
+  if (configuredPython) {
+    return resolveCommandPath(configuredPython);
+  }
+
+  const projectVenvPython = path.resolve(__dirname, '../.venv/Scripts/python.exe');
+  if (existsSync(projectVenvPython)) {
+    return projectVenvPython;
+  }
+
+  const localVenvPython = path.resolve(__dirname, '.venv/Scripts/python.exe');
+  if (existsSync(localVenvPython)) {
+    return localVenvPython;
+  }
+
+  const bundledPython = path.resolve(
+    process.env.USERPROFILE ?? '',
+    '.cache/codex-runtimes/codex-primary-runtime/dependencies/python/python.exe',
+  );
+  if (existsSync(bundledPython)) {
+    return bundledPython;
+  }
+
+  return 'python';
 }
 
 async function switchObsSceneWithTransition(
@@ -473,7 +539,12 @@ function obsActionFromPath(pathname: string) {
   return match?.[1] ?? null;
 }
 
-function runScheduleScript(command: string, group: string, payload?: unknown) {
+function runScheduleScript(
+  pythonExecutable: string,
+  command: string,
+  group: string,
+  payload?: unknown,
+) {
   return new Promise<unknown>((resolve, reject) => {
     const child = execFile(
       pythonExecutable,
@@ -519,15 +590,13 @@ function groupFromPath(pathname: string) {
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
+  const pythonExecutable = resolvePythonExecutable(env);
   const obsClient = createObsClient(
     env.OBS_WS_URL || 'ws://127.0.0.1:4455',
     env.OBS_WS_PASSWORD || '',
   );
 
   return {
-    define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-    },
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -671,6 +740,21 @@ export default defineConfig(({mode}) => {
                   return;
                 }
 
+                if (req.method === 'POST' && obsAction === 'score-image-files') {
+                  const body = (await readJsonBody(req)) as {paths?: string[]};
+                  if (
+                    !Array.isArray(body.paths) ||
+                    body.paths.some((imagePath) => typeof imagePath !== 'string')
+                  ) {
+                    sendJson(res, 400, {error: '缺少 paths'});
+                    return;
+                  }
+
+                  await setObsScoreImageFiles(obsClient, body.paths);
+                  sendJson(res, 200, await getObsSnapshot(obsClient));
+                  return;
+                }
+
                 if (req.method === 'POST' && obsAction === 'scene-with-transition') {
                   const body = (await readJsonBody(req)) as {
                     sceneName?: string;
@@ -720,28 +804,43 @@ export default defineConfig(({mode}) => {
 
             try {
               if (req.method === 'GET' && route.action === 'schedule') {
-                const result = await runScheduleScript('load', route.group);
+                const result = await runScheduleScript(pythonExecutable, 'load', route.group);
                 sendJson(res, 200, result);
                 return;
               }
 
               if (req.method === 'POST' && route.action === 'round') {
                 const body = await readJsonBody(req);
-                const result = await runScheduleScript('write-round', route.group, body);
+                const result = await runScheduleScript(
+                  pythonExecutable,
+                  'write-round',
+                  route.group,
+                  body,
+                );
                 sendJson(res, 200, result);
                 return;
               }
 
               if (req.method === 'POST' && route.action === 'score-images') {
                 const body = await readJsonBody(req);
-                const result = await runScheduleScript('generate-score-images', route.group, body);
+                const result = await runScheduleScript(
+                  pythonExecutable,
+                  'generate-score-images',
+                  route.group,
+                  body,
+                );
                 sendJson(res, 200, result);
                 return;
               }
 
               if (req.method === 'POST' && route.action === 'advance') {
                 const body = await readJsonBody(req);
-                const result = await runScheduleScript('write-advancement', route.group, body);
+                const result = await runScheduleScript(
+                  pythonExecutable,
+                  'write-advancement',
+                  route.group,
+                  body,
+                );
                 sendJson(res, 200, result);
                 return;
               }

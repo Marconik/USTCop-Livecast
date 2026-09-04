@@ -1,0 +1,47 @@
+# Environment and local secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / Vite
+node_modules/
+dist/
+build/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Project runtime outputs
+outputs/
+tmp-score-test/
+Broadcast/score-image.*/
+Broadcast/*.tmp
+Broadcast/*.tmp.png
+
+# Office temporary lock files
+~$*.xlsx
+~$*.xls
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+Desktop.ini
+.vscode/
+.idea/
+*.swp
+*.swo

@@ -70,6 +70,11 @@ type ObsTransition = {
   fixed?: boolean;
 };
 
+type ScoreImages = {
+  paths: [string, string];
+  songCount: 2 | 3;
+};
+
 type ObsState = {
   connected: boolean;
   currentScene?: string;
@@ -206,7 +211,7 @@ const writeWorkbookRound = (
     ok: boolean;
     winnerIndex: number;
     totals: [number, number];
-    scoreImages?: {paths: [string, string]; songCount: 2 | 3};
+    scoreImages?: ScoreImages;
   }>(
     `/api/groups/${group}/round`,
     {
@@ -229,7 +234,7 @@ const writeScoreImages = (
 ) =>
   requestJson<{
     ok: boolean;
-    scoreImages?: {paths: [string, string]; songCount: 2 | 3};
+    scoreImages?: ScoreImages;
   }>(
     `/api/groups/${group}/score-images`,
     {
@@ -283,6 +288,12 @@ const setObsNamedSceneItemsEnabled = (
   requestJson<ObsState>('/api/obs/named-scene-items', {
     method: 'POST',
     body: JSON.stringify({sceneName, sourceNames, sceneItemEnabled}),
+  });
+
+const setObsScoreImageFiles = (paths: [string, string]) =>
+  requestJson<ObsState>('/api/obs/score-image-files', {
+    method: 'POST',
+    body: JSON.stringify({paths}),
   });
 
 const switchObsSceneWithTransition = (
@@ -477,10 +488,17 @@ function CompetitionApp() {
     }
   };
 
-  const showObsScoreImagesUntilNextSceneSwitch = async (autoHideMs?: number) => {
+  const showObsScoreImagesUntilNextSceneSwitch = async (
+    scoreImages?: ScoreImages,
+    autoHideMs?: number,
+  ) => {
     clearScoreImagesHideTimer();
     setObsLoadState('loading');
     try {
+      if (scoreImages) {
+        await setObsScoreImageFiles(scoreImages.paths);
+      }
+
       const state = await setObsNamedSceneItemsEnabled(
         OBS_SCORE_SCENE_NAME,
         OBS_SCORE_IMAGE_SOURCE_NAMES,
@@ -678,8 +696,9 @@ function CompetitionApp() {
     let scoreImagesVisible = false;
     try {
       setStatusText('正在生成前两首成绩图...');
-      await writeScoreImages(loadedGroup, round, scoreState);
+      const result = await writeScoreImages(loadedGroup, round, scoreState);
       scoreImagesVisible = await showObsScoreImagesUntilNextSceneSwitch(
+        result.scoreImages,
         OBS_TEMP_SCORE_IMAGE_DISPLAY_MS,
       );
     } catch (error) {
@@ -811,8 +830,8 @@ function CompetitionApp() {
     let scoreImagesVisible = false;
     try {
       setStatusText(`正在写入 ${stageName} ${roundId} 成绩并生成成绩图...`);
-      await writeWorkbookRound(loadedGroup, round, nextRoundState);
-      scoreImagesVisible = await showObsScoreImagesUntilNextSceneSwitch();
+      const result = await writeWorkbookRound(loadedGroup, round, nextRoundState);
+      scoreImagesVisible = await showObsScoreImagesUntilNextSceneSwitch(result.scoreImages);
     } catch (error) {
       setStatusText(error instanceof Error ? error.message : `${stageName} ${roundId} 写入失败`);
       return;

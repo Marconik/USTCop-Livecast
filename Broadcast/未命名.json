@@ -450,7 +450,7 @@
                         },
                         "pos_rel": {
                             "x": -1.7754629850387573,
-                            "y": -0.9995371103286743
+                            "y": -0.9995371699333191
                         },
                         "scale": {
                             "x": 0.8697916865348816,
@@ -505,7 +505,7 @@
                         },
                         "pos_rel": {
                             "x": -1.7754629850387573,
-                            "y": -0.9995371103286743
+                            "y": -0.9995371699333191
                         },
                         "scale": {
                             "x": 0.8697916865348816,
@@ -560,7 +560,7 @@
                         },
                         "pos_rel": {
                             "x": -1.7754629850387573,
-                            "y": -0.9995371103286743
+                            "y": -0.9995371699333191
                         },
                         "scale": {
                             "x": 0.8697916865348816,
@@ -592,7 +592,7 @@
                     {
                         "name": "A组",
                         "source_uuid": "8cd72c35-87c3-4662-b40f-8a8aea93eb6b",
-                        "visible": false,
+                        "visible": true,
                         "locked": false,
                         "rot": 0.0,
                         "scale_ref": {
@@ -615,7 +615,7 @@
                         },
                         "pos_rel": {
                             "x": -1.7754629850387573,
-                            "y": -0.9995371103286743
+                            "y": -0.9995371699333191
                         },
                         "scale": {
                             "x": 0.8697916865348816,
@@ -683,7 +683,7 @@
             "versioned_id": "group",
             "settings": {
                 "custom_size": true,
-                "cx": 2560,
+                "cx": 365,
                 "cy": 1440,
                 "id_counter": 0,
                 "items": [
@@ -698,7 +698,7 @@
                             "y": 1080.0
                         },
                         "align": 5,
-                        "bounds_type": 0,
+                        "bounds_type": 1,
                         "bounds_align": 0,
                         "bounds_crop": false,
                         "crop_left": 0,
@@ -716,20 +716,20 @@
                             "y": -1.0
                         },
                         "scale": {
-                            "x": 1.3333337306976318,
-                            "y": 1.3333348035812378
+                            "x": 1.0,
+                            "y": 1.0
                         },
                         "scale_rel": {
-                            "x": 1.000000238418579,
-                            "y": 1.000001072883606
+                            "x": 0.75,
+                            "y": 0.75
                         },
                         "bounds": {
-                            "x": 0.0,
-                            "y": 0.0
+                            "x": 364.999755859375,
+                            "y": 1440.0
                         },
                         "bounds_rel": {
-                            "x": 0.0,
-                            "y": 0.0
+                            "x": 0.5069441199302673,
+                            "y": 2.0
                         },
                         "scale_filter": "disable",
                         "blend_method": "default",
@@ -779,11 +779,11 @@
                             "y": 0.75
                         },
                         "bounds": {
-                            "x": 2560.0,
+                            "x": 349.401611328125,
                             "y": 1440.0
                         },
                         "bounds_rel": {
-                            "x": 3.555555582046509,
+                            "x": 0.48528000712394714,
                             "y": 2.0
                         },
                         "scale_filter": "disable",
@@ -1338,10 +1338,10 @@
             "name": "上机"
         }
     ],
-    "current_scene": "抽选",
-    "current_program_scene": "抽选",
+    "current_scene": "上机",
+    "current_program_scene": "上机",
     "canvases": [],
-    "current_transition": "插入视频",
+    "current_transition": "淡入淡出",
     "transition_duration": 300,
     "transitions": [
         {
@@ -1379,7 +1379,7 @@
     "saved_projectors": [],
     "preview_locked": false,
     "scaling_enabled": false,
-    "scaling_level": -3,
+    "scaling_level": -12,
     "scaling_off_x": 0.0,
     "scaling_off_y": 0.0,
     "virtual-camera": {
@@ -1413,8 +1413,8 @@
         "scripts-tool": []
     },
     "resolution": {
-        "x": 1920,
-        "y": 1080
+        "x": 2560,
+        "y": 1440
     },
     "version": 2,
     "sources": [
@@ -1426,7 +1426,7 @@
             "versioned_id": "scene",
             "settings": {
                 "custom_size": false,
-                "id_counter": 29,
+                "id_counter": 30,
                 "items": [
                     {
                         "name": "DroidCam OBS",
@@ -1983,7 +1983,7 @@
                     {
                         "name": "A组",
                         "source_uuid": "8cd72c35-87c3-4662-b40f-8a8aea93eb6b",
-                        "visible": false,
+                        "visible": true,
                         "locked": false,
                         "rot": 0.0,
                         "scale_ref": {
@@ -2103,7 +2103,7 @@
                             "y": 1080.0
                         },
                         "align": 5,
-                        "bounds_type": 0,
+                        "bounds_type": 1,
                         "bounds_align": 0,
                         "bounds_crop": false,
                         "crop_left": 0,
@@ -2121,20 +2121,20 @@
                             "y": -0.23194444179534912
                         },
                         "scale": {
-                            "x": 1.3333337306976318,
-                            "y": 1.3333348035812378
+                            "x": 1.0,
+                            "y": 1.0
                         },
                         "scale_rel": {
-                            "x": 0.32054802775382996,
-                            "y": 0.3205578625202179
+                            "x": 0.2404109537601471,
+                            "y": 0.24041813611984253
                         },
                         "bounds": {
-                            "x": 0.0,
-                            "y": 0.0
+                            "x": 364.999755859375,
+                            "y": 1440.0
                         },
                         "bounds_rel": {
-                            "x": 0.0,
-                            "y": 0.0
+                            "x": 0.5069441199302673,
+                            "y": 2.0
                         },
                         "scale_filter": "disable",
                         "blend_method": "default",
@@ -2184,11 +2184,11 @@
                             "y": 0.24041813611984253
                         },
                         "bounds": {
-                            "x": 2560.0,
+                            "x": 349.401611328125,
                             "y": 1440.0
                         },
                         "bounds_rel": {
-                            "x": 3.555555582046509,
+                            "x": 0.48528000712394714,
                             "y": 2.0
                         },
                         "scale_filter": "disable",
@@ -2261,7 +2261,7 @@
                         "name": "轮数",
                         "source_uuid": "3522bb9f-4ef8-469f-a53c-d98e3f1506ac",
                         "visible": true,
-                        "locked": true,
+                        "locked": false,
                         "rot": 0.0,
                         "scale_ref": {
                             "x": 1920.0,
@@ -2427,7 +2427,7 @@
                     {
                         "name": "成绩",
                         "source_uuid": "ca236dea-2faa-4715-85c8-97ce0d243b6a",
-                        "visible": true,
+                        "visible": false,
                         "locked": true,
                         "rot": 0.0,
                         "scale_ref": {
@@ -2486,6 +2486,61 @@
                         "private_settings": {
                             "collapsed": false
                         }
+                    },
+                    {
+                        "name": "音频输入采集",
+                        "source_uuid": "545fac9a-aa33-429e-b1d3-2c16345f92be",
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "scale_ref": {
+                            "x": 2560.0,
+                            "y": 1440.0
+                        },
+                        "align": 5,
+                        "bounds_type": 0,
+                        "bounds_align": 0,
+                        "bounds_crop": false,
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0,
+                        "id": 30,
+                        "group_item_backup": false,
+                        "pos": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "pos_rel": {
+                            "x": -1.7777777910232544,
+                            "y": -1.0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "scale_rel": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "bounds": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "bounds_rel": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "scale_filter": "disable",
+                        "blend_method": "default",
+                        "blend_type": "normal",
+                        "show_transition": {
+                            "duration": 300
+                        },
+                        "hide_transition": {
+                            "duration": 300
+                        },
+                        "private_settings": {}
                     }
                 ]
             },
@@ -2515,7 +2570,9 @@
                 "libobs.show_scene_item.5": [],
                 "libobs.hide_scene_item.5": [],
                 "libobs.show_scene_item.7": [],
-                "libobs.hide_scene_item.7": []
+                "libobs.hide_scene_item.7": [],
+                "libobs.show_scene_item.30": [],
+                "libobs.hide_scene_item.30": []
             },
             "deinterlace_mode": 0,
             "deinterlace_field_order": 0,
@@ -2769,7 +2826,7 @@
             "versioned_id": "scene",
             "settings": {
                 "custom_size": false,
-                "id_counter": 16,
+                "id_counter": 19,
                 "items": [
                     {
                         "name": "背景",
@@ -3216,8 +3273,8 @@
                         "private_settings": {}
                     },
                     {
-                        "name": "DroidCam",
-                        "source_uuid": "c3496096-bf79-463f-b22a-e3595180731c",
+                        "name": "DroidCam OBS",
+                        "source_uuid": "0bc9a19d-e489-427b-a01e-d4694356ec1e",
                         "visible": true,
                         "locked": false,
                         "rot": 0.0,
@@ -3233,62 +3290,7 @@
                         "crop_top": 0,
                         "crop_right": 0,
                         "crop_bottom": 0,
-                        "id": 13,
-                        "group_item_backup": false,
-                        "pos": {
-                            "x": 0.0,
-                            "y": 0.0
-                        },
-                        "pos_rel": {
-                            "x": -1.7777777910232544,
-                            "y": -1.0
-                        },
-                        "scale": {
-                            "x": 1.0,
-                            "y": 1.0
-                        },
-                        "scale_rel": {
-                            "x": 1.0,
-                            "y": 1.0
-                        },
-                        "bounds": {
-                            "x": 0.0,
-                            "y": 0.0
-                        },
-                        "bounds_rel": {
-                            "x": 0.0,
-                            "y": 0.0
-                        },
-                        "scale_filter": "disable",
-                        "blend_method": "default",
-                        "blend_type": "normal",
-                        "show_transition": {
-                            "duration": 300
-                        },
-                        "hide_transition": {
-                            "duration": 300
-                        },
-                        "private_settings": {}
-                    },
-                    {
-                        "name": "视频采集设备",
-                        "source_uuid": "46b7dcda-ce53-4e5d-be35-c46a9f1e86d1",
-                        "visible": true,
-                        "locked": false,
-                        "rot": 0.0,
-                        "scale_ref": {
-                            "x": 2560.0,
-                            "y": 1440.0
-                        },
-                        "align": 5,
-                        "bounds_type": 0,
-                        "bounds_align": 0,
-                        "bounds_crop": false,
-                        "crop_left": 0,
-                        "crop_top": 0,
-                        "crop_right": 0,
-                        "crop_bottom": 0,
-                        "id": 14,
+                        "id": 19,
                         "group_item_backup": false,
                         "pos": {
                             "x": 0.0,
@@ -3348,10 +3350,8 @@
                 "libobs.hide_scene_item.3": [],
                 "libobs.show_scene_item.12": [],
                 "libobs.hide_scene_item.12": [],
-                "libobs.show_scene_item.13": [],
-                "libobs.hide_scene_item.13": [],
-                "libobs.show_scene_item.14": [],
-                "libobs.hide_scene_item.14": []
+                "libobs.show_scene_item.19": [],
+                "libobs.hide_scene_item.19": []
             },
             "deinterlace_mode": 0,
             "deinterlace_field_order": 0,
@@ -3393,7 +3393,7 @@
             "versioned_id": "scene",
             "settings": {
                 "custom_size": false,
-                "id_counter": 16,
+                "id_counter": 18,
                 "items": [
                     {
                         "name": "背景",
@@ -4007,7 +4007,7 @@
                     {
                         "name": "A组",
                         "source_uuid": "8cd72c35-87c3-4662-b40f-8a8aea93eb6b",
-                        "visible": false,
+                        "visible": true,
                         "locked": false,
                         "rot": 0.0,
                         "scale_ref": {
@@ -4127,7 +4127,7 @@
                             "y": 1080.0
                         },
                         "align": 5,
-                        "bounds_type": 0,
+                        "bounds_type": 1,
                         "bounds_align": 0,
                         "bounds_crop": false,
                         "crop_left": 0,
@@ -4145,20 +4145,20 @@
                             "y": -0.3240740895271301
                         },
                         "scale": {
-                            "x": 1.3333337306976318,
-                            "y": 1.3333348035812378
+                            "x": 1.0,
+                            "y": 1.0
                         },
                         "scale_rel": {
-                            "x": 0.3260074257850647,
-                            "y": 0.325279176235199
+                            "x": 0.24450549483299255,
+                            "y": 0.24395911395549774
                         },
                         "bounds": {
-                            "x": 0.0,
-                            "y": 0.0
+                            "x": 364.999755859375,
+                            "y": 1440.0
                         },
                         "bounds_rel": {
-                            "x": 0.0,
-                            "y": 0.0
+                            "x": 0.5069441199302673,
+                            "y": 2.0
                         },
                         "scale_filter": "disable",
                         "blend_method": "default",
@@ -4208,11 +4208,11 @@
                             "y": 0.24395911395549774
                         },
                         "bounds": {
-                            "x": 2560.0,
+                            "x": 349.401611328125,
                             "y": 1440.0
                         },
                         "bounds_rel": {
-                            "x": 3.555555582046509,
+                            "x": 0.48528000712394714,
                             "y": 2.0
                         },
                         "scale_filter": "disable",
@@ -4337,6 +4337,116 @@
                         "private_settings": {
                             "collapsed": false
                         }
+                    },
+                    {
+                        "name": "音频输入采集",
+                        "source_uuid": "545fac9a-aa33-429e-b1d3-2c16345f92be",
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "scale_ref": {
+                            "x": 2560.0,
+                            "y": 1440.0
+                        },
+                        "align": 5,
+                        "bounds_type": 0,
+                        "bounds_align": 0,
+                        "bounds_crop": false,
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0,
+                        "id": 18,
+                        "group_item_backup": false,
+                        "pos": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "pos_rel": {
+                            "x": -1.7777777910232544,
+                            "y": -1.0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "scale_rel": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "bounds": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "bounds_rel": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "scale_filter": "disable",
+                        "blend_method": "default",
+                        "blend_type": "normal",
+                        "show_transition": {
+                            "duration": 300
+                        },
+                        "hide_transition": {
+                            "duration": 300
+                        },
+                        "private_settings": {}
+                    },
+                    {
+                        "name": "DroidCam OBS",
+                        "source_uuid": "0bc9a19d-e489-427b-a01e-d4694356ec1e",
+                        "visible": true,
+                        "locked": false,
+                        "rot": 0.0,
+                        "scale_ref": {
+                            "x": 2560.0,
+                            "y": 1440.0
+                        },
+                        "align": 5,
+                        "bounds_type": 0,
+                        "bounds_align": 0,
+                        "bounds_crop": false,
+                        "crop_left": 0,
+                        "crop_top": 0,
+                        "crop_right": 0,
+                        "crop_bottom": 0,
+                        "id": 17,
+                        "group_item_backup": false,
+                        "pos": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "pos_rel": {
+                            "x": -1.7777777910232544,
+                            "y": -1.0
+                        },
+                        "scale": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "scale_rel": {
+                            "x": 1.0,
+                            "y": 1.0
+                        },
+                        "bounds": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "bounds_rel": {
+                            "x": 0.0,
+                            "y": 0.0
+                        },
+                        "scale_filter": "disable",
+                        "blend_method": "default",
+                        "blend_type": "normal",
+                        "show_transition": {
+                            "duration": 300
+                        },
+                        "hide_transition": {
+                            "duration": 300
+                        },
+                        "private_settings": {}
                     }
                 ]
             },
@@ -4362,7 +4472,11 @@
                 "libobs.show_scene_item.5": [],
                 "libobs.hide_scene_item.5": [],
                 "libobs.show_scene_item.10": [],
-                "libobs.hide_scene_item.10": []
+                "libobs.hide_scene_item.10": [],
+                "libobs.show_scene_item.17": [],
+                "libobs.hide_scene_item.17": [],
+                "libobs.show_scene_item.18": [],
+                "libobs.hide_scene_item.18": []
             },
             "deinterlace_mode": 0,
             "deinterlace_field_order": 0,
@@ -4939,35 +5053,6 @@
         },
         {
             "prev_ver": 537001986,
-            "name": "视频采集设备",
-            "uuid": "46b7dcda-ce53-4e5d-be35-c46a9f1e86d1",
-            "id": "dshow_input",
-            "versioned_id": "dshow_input",
-            "settings": {},
-            "mixers": 255,
-            "sync": 0,
-            "flags": 0,
-            "volume": 1.0,
-            "balance": 0.5,
-            "enabled": true,
-            "muted": false,
-            "push-to-mute": false,
-            "push-to-mute-delay": 0,
-            "push-to-talk": false,
-            "push-to-talk-delay": 0,
-            "hotkeys": {
-                "libobs.mute": [],
-                "libobs.unmute": [],
-                "libobs.push-to-mute": [],
-                "libobs.push-to-talk": []
-            },
-            "deinterlace_mode": 0,
-            "deinterlace_field_order": 0,
-            "monitoring_type": 0,
-            "private_settings": {}
-        },
-        {
-            "prev_ver": 537001986,
             "name": "赛程",
             "uuid": "993f1b22-285d-40d6-a1c2-38c7a7b67e2f",
             "id": "scene",
@@ -5222,7 +5307,7 @@
                         },
                         "pos_rel": {
                             "x": 1.0222222805023193,
-                            "y": 0.7018518447875977
+                            "y": 0.7018517255783081
                         },
                         "scale": {
                             "x": 1.0,
@@ -5473,37 +5558,6 @@
         },
         {
             "prev_ver": 537001986,
-            "name": "DroidCam",
-            "uuid": "c3496096-bf79-463f-b22a-e3595180731c",
-            "id": "droidcam_source",
-            "versioned_id": "droidcam_source",
-            "settings": {
-                "host": "192.168.0.9"
-            },
-            "mixers": 255,
-            "sync": 0,
-            "flags": 0,
-            "volume": 1.0,
-            "balance": 0.5,
-            "enabled": true,
-            "muted": false,
-            "push-to-mute": false,
-            "push-to-mute-delay": 0,
-            "push-to-talk": false,
-            "push-to-talk-delay": 0,
-            "hotkeys": {
-                "libobs.mute": [],
-                "libobs.unmute": [],
-                "libobs.push-to-mute": [],
-                "libobs.push-to-talk": []
-            },
-            "deinterlace_mode": 0,
-            "deinterlace_field_order": 0,
-            "monitoring_type": 0,
-            "private_settings": {}
-        },
-        {
-            "prev_ver": 537001986,
             "name": "DroidCam OBS",
             "uuid": "0bc9a19d-e489-427b-a01e-d4694356ec1e",
             "id": "droidcam_obs",
@@ -5512,7 +5566,7 @@
                 "cur_dev_id": "Ciallo～(∠・ω< )⌒★._droidcamobs._tcp.local.",
                 "cur_dev_ip": "192.168.1.167",
                 "cur_dev_type": 4,
-                "device_list": "Ciallo～(∠・ω< )⌒★._droidcamobs._tcp.local.",
+                "device_list": "dev_id_wifi",
                 "remote_url": "",
                 "wifi_ip": "192.168.102.61",
                 "activated": true,

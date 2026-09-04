@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -201,6 +203,21 @@ def render_player_card(
     )
 
 
+def inherit_parent_permissions(path: Path) -> None:
+    if platform.system() != "Windows":
+        return
+
+    try:
+        subprocess.run(
+            ["icacls", str(path), "/reset"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(f"成绩图权限继承失败：{path}") from exc
+
+
 def generate_score_images(
     payload: dict[str, Any],
     output_dir: Path | str = DEFAULT_OUTPUT_DIR,
@@ -247,6 +264,7 @@ def generate_score_images(
 
         for temp_output, final_path in zip(temp_outputs, final_paths):
             os.replace(temp_output, final_path)
+            inherit_parent_permissions(final_path)
 
     return {
         "ok": True,
